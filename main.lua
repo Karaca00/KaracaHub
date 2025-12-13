@@ -11964,6 +11964,9 @@ Variant="Primary",
 else
 as:Destroy()
 end
+if game:GetService("CoreGui").HiddenUI:FindFirstChild("WindUI")then
+as:Destroy()
+end
 end,(as.Topbar.ButtonsType=="Default"and 999 or 997),nil,Color3.fromHex"#F4695F")
 
 function as.Tag(x,B)
@@ -12202,7 +12205,7 @@ Scale=aa.Scale,
 aa.UIScaleObj=av
 
 aa.ScreenGui=ap("ScreenGui",{
-Name="Karaca",
+Name="WindUI",
 Parent=au,
 IgnoreGuiInset=true,
 ScreenInsets="None",
