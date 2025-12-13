@@ -3272,7 +3272,7 @@ function UILibrary.new(gameName, userId, rank)
     local Drag = Draggable.Drag(window.MainUI, Frame)
 
     --// Customize the GUI
-    window.Watermark.Text = ("Karaca Hub | %s | %s | $s"):format(userName,userId, gameName)
+    window.Watermark.Text = ("Karaca Hub | %s | %s | $s"):format(userId, gameName)
     local userinfo = window.MainUI.Sidebar.ContentHolder.UserInfo.Content
     userinfo.Rank.Text = rank
     userinfo.Title.Text = (Players.LocalPlayer.Name.."|"..userId)
@@ -3282,7 +3282,6 @@ function UILibrary.new(gameName, userId, rank)
             UI = {},
             windowInfo = {
                 gameName = gameName,
-                userName = userName,
                 userId = userId,
                 rank = rank
             },
