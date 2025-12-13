@@ -1284,7 +1284,7 @@ local function getObjGen()
             Gui.Rank.Parent = Gui.Content_5
             Gui.Rank.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             Gui.Rank.BackgroundTransparency = 1.000
-            Gui.Rank.Size = UDim2.new(1, 0, 0.5, 0)
+            Gui.Rank.Size = UDim2.new(0.6, 0, 0.5, 0)
             Gui.Rank.ZIndex = 123
             Gui.Rank.Font = Enum.Font.Gotham
             Gui.Rank.Text = "Admin"
@@ -3272,16 +3272,17 @@ function UILibrary.new(gameName, userId, rank)
     local Drag = Draggable.Drag(window.MainUI, Frame)
 
     --// Customize the GUI
-    window.Watermark.Text = ("hydrahub v2 | %s | %s"):format(userId, gameName)
+    window.Watermark.Text = ("Karaca Hub | %s | %s | $s"):format(userName,userId, gameName)
     local userinfo = window.MainUI.Sidebar.ContentHolder.UserInfo.Content
     userinfo.Rank.Text = rank
-    userinfo.Title.Text = userId
+    userinfo.Title.Text = (Players.LocalPlayer.Name.."|"..userId)
 
     return setmetatable(
         {
             UI = {},
             windowInfo = {
                 gameName = gameName,
+                userName = userName,
                 userId = userId,
                 rank = rank
             },
