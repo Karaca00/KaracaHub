@@ -11964,10 +11964,11 @@ Variant="Primary",
 else
 as:Destroy()
 end
+end,(as.Topbar.ButtonsType=="Default"and 999 or 997),nil,Color3.fromHex"#F4695F")
+
 if game:GetService("CoreGui").HiddenUI:FindFirstChild("WindUI")then
 as:Destroy()
 end
-end,(as.Topbar.ButtonsType=="Default"and 999 or 997),nil,Color3.fromHex"#F4695F")
 
 function as.Tag(x,B)
 if as.UIElements.Main.Main.Topbar.Center.Visible==false then as.UIElements.Main.Main.Topbar.Center.Visible=true end
