@@ -3275,7 +3275,7 @@ function UILibrary.new(gameName, userId, rank)
     window.Watermark.Text = ("Karaca Hub | %s | %s"):format(userId, gameName)
     local userinfo = window.MainUI.Sidebar.ContentHolder.UserInfo.Content
     userinfo.Rank.Text = rank
-    userinfo.Title.Text = (Players.LocalPlayer.Name.."|"..userId)
+    userinfo.Title.Text = (Players.LocalPlayer.Name.." | "..userId)
 
     return setmetatable(
         {
