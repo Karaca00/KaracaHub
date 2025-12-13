@@ -11966,10 +11966,6 @@ as:Destroy()
 end
 end,(as.Topbar.ButtonsType=="Default"and 999 or 997),nil,Color3.fromHex"#F4695F")
 
-if game:GetService("CoreGui").HiddenUI:FindFirstChild("WindUI")then
-as:Destroy()
-end
-
 function as.Tag(x,B)
 if as.UIElements.Main.Main.Topbar.Center.Visible==false then as.UIElements.Main.Main.Topbar.Center.Visible=true end
 return ap:New(B,as.UIElements.Main.Main.Topbar.Center)
@@ -11996,6 +11992,10 @@ al(aw.ImageLabel,0.17,{ImageTransparency=.8}):Play()
 end
 end)
 end
+end
+
+if game:GetService("CoreGui").HiddenUI:FindFirstChild("WindUI")then
+as:Destroy()
 end
 
 aj.AddSignal(aw.InputBegan,function(x)
