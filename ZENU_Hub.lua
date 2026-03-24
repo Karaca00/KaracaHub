@@ -339,7 +339,7 @@ function Library:CreateWindow(title, config)
 
             MinBtn.Text = "—"
         end
-    end)
+    })
 
     CloseBtn.MouseButton1Click:Connect(function()
         CreateTween(MainFrame, {0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In}, {Size = UDim2.new(0, 0, 0, 0), Position = MainFrame.Position + UDim2.new(0, 300, 0, 200)}):Play()
