@@ -21,7 +21,15 @@ local Library = {
     ActiveGroup = nil,
     TabGroups = {},
     Tabs = {},
-    Notifications = {}
+    Notifications = {},
+    -- Store original UI properties for minimize/restore
+    OriginalMainFrameSize = nil,
+    OriginalMainFramePosition = nil,
+    OriginalTitleLabelPosition = nil,
+    OriginalMinBtnPosition = nil,
+    OriginalCloseBtnPosition = nil,
+    OriginalBtnContainerPosition = nil,
+    CurrentConfig = {}
 }
 
 -- Utility Functions
@@ -143,6 +151,8 @@ end
 
 function Library:CreateWindow(title, config)
     config = config or {}
+    Library.CurrentConfig = config -- Store current config
+
     if config.Theme then
         for k, v in pairs(config.Theme) do
             Library.Theme[k] = v
@@ -290,19 +300,19 @@ function Library:CreateWindow(title, config)
 
     MakeDraggable(TopBar, MainFrame)
 
-    -- Minimize Logic
-    local OriginalMainFrameSize = MainFrame.Size
-    local OriginalMainFramePosition = MainFrame.Position
-    local OriginalTitleLabelPosition = TitleLabel.Position
-    local OriginalMinBtnPosition = MinBtn.Position
-    local OriginalCloseBtnPosition = CloseBtn.Position
-    local OriginalBtnContainerPosition = BtnContainer.Position
+    -- Store original UI properties for minimize/restore
+    Library.OriginalMainFrameSize = MainFrame.Size
+    Library.OriginalMainFramePosition = MainFrame.Position
+    Library.OriginalTitleLabelPosition = TitleLabel.Position
+    Library.OriginalMinBtnPosition = MinBtn.Position
+    Library.OriginalCloseBtnPosition = CloseBtn.Position
+    Library.OriginalBtnContainerPosition = BtnContainer.Position
 
     MinBtn.MouseButton1Click:Connect(function()
         Library.Minimized = not Library.Minimized
         if Library.Minimized then
             -- Minimize UI: shrink both X and Y, make transparent
-            CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = UDim2.new(0, 200, 0, 45), Position = UDim2.new(OriginalMainFramePosition.X.Scale, OriginalMainFramePosition.X.Offset + OriginalMainFrameSize.X.Offset - 200, OriginalMainFramePosition.Y.Scale, OriginalMainFramePosition.Y.Offset)}):Play()
+            CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = UDim2.new(0, 200, 0, 45), Position = UDim2.new(Library.OriginalMainFramePosition.X.Scale, Library.OriginalMainFramePosition.X.Offset + Library.OriginalMainFrameSize.X.Offset - 200, Library.OriginalMainFramePosition.Y.Scale, Library.OriginalMainFramePosition.Y.Offset)}):Play()
             CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {BackgroundTransparency = 1}):Play() -- Make it fully transparent when minimized
             CreateTween(Sidebar, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = UDim2.new(0, 0, 1, -45)}):Play()
             CreateTween(ContentArea, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = UDim2.new(0, 0, 1, -45), Position = UDim2.new(0, 0, 0, 45)}):Play()
@@ -316,16 +326,16 @@ function Library:CreateWindow(title, config)
             MinBtn.Text = "+"
         else
             -- Restore UI
-            CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = OriginalMainFrameSize, Position = OriginalMainFramePosition}):Play()
-            CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {BackgroundTransparency = config.Transparency or 0}):Play() -- Restore original transparency
+            CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = Library.OriginalMainFrameSize, Position = Library.OriginalMainFramePosition}):Play()
+            CreateTween(MainFrame, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {BackgroundTransparency = Library.CurrentConfig.Transparency or 0}):Play() -- Restore original transparency
             CreateTween(Sidebar, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = UDim2.new(0, 170, 1, -45)}):Play()
             CreateTween(ContentArea, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Size = UDim2.new(1, -170, 1, -45), Position = UDim2.new(0, 170, 0, 45)}):Play()
 
             -- Restore Title and MinBtn positions
-            CreateTween(TitleLabel, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = OriginalTitleLabelPosition}):Play()
-            CreateTween(BtnContainer, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = OriginalBtnContainerPosition}):Play()
-            CreateTween(MinBtn, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = OriginalMinBtnPosition}):Play()
-            CreateTween(CloseBtn, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = OriginalCloseBtnPosition}):Play()
+            CreateTween(TitleLabel, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = Library.OriginalTitleLabelPosition}):Play()
+            CreateTween(BtnContainer, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = Library.OriginalBtnContainerPosition}):Play()
+            CreateTween(MinBtn, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = Library.OriginalMinBtnPosition}):Play()
+            CreateTween(CloseBtn, {0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out}, {Position = Library.OriginalCloseBtnPosition}):Play()
 
             MinBtn.Text = "—"
         end
@@ -407,7 +417,7 @@ function Library:CreateWindow(title, config)
                     tab.TabButton.LayoutOrder = 9999 -- Move out of layout order
                 end
             end
-            Library.TabListLayout:LayoutOrderChanged()
+            TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y) -- Update CanvasSize
         end)
 
         function Group:CreateTab(name)
@@ -756,7 +766,7 @@ function Library:CreateWindow(title, config)
                             end
                             CreateTween(OptionButton, {0.2}, {BackgroundColor3 = Library.Theme.AccentColor}):Play()
                         end
-                    end
+                    end)
 
                     DropdownFrame.MouseButton1Click:Connect(function()
                         DropdownList.Visible = not DropdownList.Visible
@@ -960,6 +970,560 @@ function Library:CreateWindow(title, config)
             return Tab
         end
         return Group
+    end
+
+    -- Standalone Tab (not in a group)
+    function Window:CreateTab(name)
+        local Tab = {}
+        Tab.Name = name
+        Tab.Elements = {}
+        
+        -- Create a dummy group for standalone tabs to manage layout
+        local StandaloneGroup = {}
+        StandaloneGroup.Name = name .. "_StandaloneGroup"
+        StandaloneGroup.Tabs = {Tab}
+        StandaloneGroup.Expanded = true -- Always expanded
+
+        Library.Tabs[name] = Tab
+
+        local TabButton = Instance.new("TextButton")
+        TabButton.Name = name .. "TabButton"
+        TabButton.Size = UDim2.new(1, -10, 0, 30)
+        TabButton.Position = UDim2.new(0, 5, 0, 0)
+        TabButton.BackgroundColor3 = Library.Theme.ElementColor
+        TabButton.BorderSizePixel = 0
+        TabButton.Text = name
+        TabButton.TextColor3 = Library.Theme.DarkText
+        TabButton.TextSize = 14
+        TabButton.Font = Enum.Font.Gotham
+        TabButton.TextXAlignment = Enum.TextXAlignment.Left
+        TabButton.Parent = TabContainer
+        Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
+
+        local TabPage = Instance.new("ScrollingFrame")
+        TabPage.Name = name .. "Page"
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.BackgroundTransparency = 1
+        TabPage.ScrollBarThickness = 6
+        TabPage.ScrollBarImageColor3 = Library.Theme.DarkText
+        TabPage.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated by UIListLayout
+        TabPage.Parent = Pages
+        TabPage.Visible = false
+
+        local PageLayout = Instance.new("UIListLayout")
+        PageLayout.Parent = TabPage
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        PageLayout.Padding = UDim.new(0, 10)
+        PageLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+        local PagePadding = Instance.new("UIPadding")
+        PagePadding.PaddingTop = UDim.new(0, 10)
+        PagePadding.PaddingBottom = UDim.new(0, 10)
+        PagePadding.PaddingLeft = UDim.new(0, 10)
+        PagePadding.PaddingRight = UDim.new(0, 10)
+        PagePadding.Parent = TabPage
+
+        Tab.TabPage = TabPage
+        Tab.TabButton = TabButton
+        Tab.PageLayout = PageLayout
+
+        TabButton.MouseButton1Click:Connect(function()
+            if Library.ActiveTab then
+                Library.ActiveTab.TabPage.Visible = false
+                CreateTween(Library.ActiveTab.TabButton, {0.2}, {BackgroundColor3 = Library.Theme.ElementColor, TextColor3 = Library.Theme.DarkText}):Play()
+            end
+            TabPage.Visible = true
+            CreateTween(TabButton, {0.2}, {BackgroundColor3 = Library.Theme.AccentColor, TextColor3 = Library.Theme.TextColor}):Play()
+            Library.ActiveTab = Tab
+            Library.ActiveGroup = StandaloneGroup
+        end)
+
+        function Tab:CreateSection(sectionTitle)
+            local SectionFrame = Instance.new("Frame")
+            SectionFrame.Name = sectionTitle .. "Section"
+            SectionFrame.Size = UDim2.new(1, 0, 0, 0) -- AutomaticSize.Y
+            SectionFrame.AutomaticSize = Enum.AutomaticSize.Y
+            SectionFrame.BackgroundColor3 = Library.Theme.SectionColor
+            SectionFrame.BorderSizePixel = 0
+            SectionFrame.Parent = TabPage
+            Instance.new("UICorner", SectionFrame).CornerRadius = UDim.new(0, 8)
+            Instance.new("UIStroke", SectionFrame).Color = Library.Theme.BorderColor
+
+            local SectionLayout = Instance.new("UIListLayout")
+            SectionLayout.Parent = SectionFrame
+            SectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            SectionLayout.Padding = UDim.new(0, 8)
+            SectionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+            local SectionPadding = Instance.new("UIPadding")
+            SectionPadding.PaddingTop = UDim.new(0, 10)
+            SectionPadding.PaddingBottom = UDim.new(0, 10)
+            SectionPadding.PaddingLeft = UDim.new(0, 10)
+            SectionPadding.PaddingRight = UDim.new(0, 10)
+            SectionPadding.Parent = SectionFrame
+
+            local TitleLabel = Instance.new("TextLabel")
+            TitleLabel.Size = UDim2.new(1, -20, 0, 20)
+            TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+            TitleLabel.BackgroundTransparency = 1
+            TitleLabel.Text = sectionTitle
+            TitleLabel.TextColor3 = Library.Theme.AccentColor
+            TitleLabel.TextSize = 16
+            TitleLabel.Font = Enum.Font.GothamBold
+            TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            TitleLabel.Parent = SectionFrame
+
+            local Section = {}
+            Section.Frame = SectionFrame
+            Section.Layout = SectionLayout
+            Section.Padding = SectionPadding
+
+            function Section:CreateButton(text, callback)
+                local Button = Instance.new("TextButton")
+                Button.Size = UDim2.new(1, -20, 0, 30)
+                Button.Position = UDim2.new(0, 10, 0, 0)
+                Button.BackgroundColor3 = Library.Theme.ElementColor
+                Button.BorderSizePixel = 0
+                Button.Text = text
+                Button.TextColor3 = Library.Theme.TextColor
+                Button.TextSize = 14
+                Button.Font = Enum.Font.Gotham
+                Button.Parent = SectionFrame
+                Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
+
+                Button.MouseButton1Click:Connect(function()
+                    if callback then pcall(callback) end
+                end)
+                return Button
+            end
+
+            function Section:CreateToggle(text, default, callback)
+                local ToggleFrame = Instance.new("Frame")
+                ToggleFrame.Size = UDim2.new(1, -20, 0, 30)
+                ToggleFrame.Position = UDim2.new(0, 10, 0, 0)
+                ToggleFrame.BackgroundColor3 = Library.Theme.ElementColor
+                ToggleFrame.BorderSizePixel = 0
+                ToggleFrame.Parent = SectionFrame
+                Instance.new("UICorner", ToggleFrame).CornerRadius = UDim.new(0, 6)
+
+                local ToggleLabel = Instance.new("TextLabel")
+                ToggleLabel.Size = UDim2.new(1, -40, 1, 0)
+                ToggleLabel.Position = UDim2.new(0, 10, 0, 0)
+                ToggleLabel.BackgroundTransparency = 1
+                ToggleLabel.Text = text
+                ToggleLabel.TextColor3 = Library.Theme.TextColor
+                ToggleLabel.TextSize = 14
+                ToggleLabel.Font = Enum.Font.Gotham
+                ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+                ToggleLabel.Parent = ToggleFrame
+
+                local ToggleButton = Instance.new("TextButton")
+                ToggleButton.Size = UDim2.new(0, 20, 0, 20)
+                ToggleButton.Position = UDim2.new(1, -30, 0, 5)
+                ToggleButton.BackgroundColor3 = Library.Theme.DarkText
+                ToggleButton.BorderSizePixel = 0
+                ToggleButton.Text = ""
+                ToggleButton.Parent = ToggleFrame
+                Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1, 0)
+
+                local State = default or false
+                local function UpdateToggleVisual()
+                    if State then
+                        CreateTween(ToggleButton, {0.2}, {BackgroundColor3 = Library.Theme.AccentColor}):Play()
+                    else
+                        CreateTween(ToggleButton, {0.2}, {BackgroundColor3 = Library.Theme.DarkText}):Play()
+                    end
+                end
+                UpdateToggleVisual()
+
+                ToggleButton.MouseButton1Click:Connect(function()
+                    State = not State
+                    UpdateToggleVisual()
+                    if callback then pcall(callback, State) end
+                end)
+                return ToggleFrame, function() return State end
+            end
+
+            function Section:CreateSlider(text, min, max, default, callback)
+                local SliderFrame = Instance.new("Frame")
+                SliderFrame.Size = UDim2.new(1, -20, 0, 40)
+                SliderFrame.Position = UDim2.new(0, 10, 0, 0)
+                SliderFrame.BackgroundColor3 = Library.Theme.ElementColor
+                SliderFrame.BorderSizePixel = 0
+                SliderFrame.Parent = SectionFrame
+                Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
+
+                local SliderLabel = Instance.new("TextLabel")
+                SliderLabel.Size = UDim2.new(1, -60, 0, 20)
+                SliderLabel.Position = UDim2.new(0, 10, 0, 5)
+                SliderLabel.BackgroundTransparency = 1
+                SliderLabel.Text = text .. ": " .. tostring(default or min)
+                SliderLabel.TextColor3 = Library.Theme.TextColor
+                SliderLabel.TextSize = 14
+                SliderLabel.Font = Enum.Font.Gotham
+                SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+                SliderLabel.Parent = SliderFrame
+
+                local ValueLabel = Instance.new("TextLabel")
+                ValueLabel.Size = UDim2.new(0, 50, 0, 20)
+                ValueLabel.Position = UDim2.new(1, -60, 0, 5)
+                ValueLabel.BackgroundTransparency = 1
+                ValueLabel.Text = tostring(default or min)
+                ValueLabel.TextColor3 = Library.Theme.DarkText
+                ValueLabel.TextSize = 14
+                ValueLabel.Font = Enum.Font.Gotham
+                ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+                ValueLabel.Parent = SliderFrame
+
+                local SliderBar = Instance.new("Frame")
+                SliderBar.Size = UDim2.new(1, -20, 0, 5)
+                SliderBar.Position = UDim2.new(0, 10, 0, 28)
+                SliderBar.BackgroundColor3 = Library.Theme.DarkText
+                SliderBar.BorderSizePixel = 0
+                SliderBar.Parent = SliderFrame
+                Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+
+                local SliderFill = Instance.new("Frame")
+                SliderFill.Size = UDim2.new(0, 0, 1, 0)
+                SliderFill.Position = UDim2.new(0, 0, 0, 0)
+                SliderFill.BackgroundColor3 = Library.Theme.AccentColor
+                SliderFill.BorderSizePixel = 0
+                SliderFill.Parent = SliderBar
+                Instance.new("UICorner", SliderFill).CornerRadius = UDim.new(1, 0)
+
+                local SliderHandle = Instance.new("Frame")
+                SliderHandle.Size = UDim2.new(0, 15, 0, 15)
+                SliderHandle.Position = UDim2.new(0, 0, 0.5, -7)
+                SliderHandle.BackgroundColor3 = Library.Theme.TextColor
+                SliderHandle.BorderSizePixel = 0
+                SliderHandle.Parent = SliderBar
+                Instance.new("UICorner", SliderHandle).CornerRadius = UDim.new(1, 0)
+                Instance.new("UIStroke", SliderHandle).Color = Library.Theme.AccentColor
+
+                local CurrentValue = default or min
+                local draggingSlider = false
+
+                local function UpdateSlider(inputPos)
+                    local relativeX = math.clamp(inputPos.X - SliderBar.AbsolutePosition.X, 0, SliderBar.AbsoluteSize.X)
+                    local ratio = relativeX / SliderBar.AbsoluteSize.X
+                    CurrentValue = math.floor(min + (max - min) * ratio + 0.5) -- Round to nearest integer
+                    CurrentValue = math.clamp(CurrentValue, min, max)
+
+                    SliderFill.Size = UDim2.new(ratio, 0, 1, 0)
+                    SliderHandle.Position = UDim2.new(ratio, 0, 0.5, -7)
+                    ValueLabel.Text = tostring(CurrentValue)
+                    SliderLabel.Text = text .. ": " .. tostring(CurrentValue)
+                    if callback then pcall(callback, CurrentValue) end
+                end
+
+                SliderHandle.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        draggingSlider = true
+                        UserInputService.InputChanged:Connect(function(inputObject)
+                            if draggingSlider and (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch) then
+                                UpdateSlider(inputObject.Position)
+                            end
+                        end)
+                        UserInputService.InputEnded:Connect(function(inputObject)
+                            if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
+                                draggingSlider = false
+                            end
+                        end)
+                    end
+                end)
+
+                -- Initial update
+                local initialRatio = (CurrentValue - min) / (max - min)
+                SliderFill.Size = UDim2.new(initialRatio, 0, 1, 0)
+                SliderHandle.Position = UDim2.new(initialRatio, 0, 0.5, -7)
+
+                return SliderFrame, function() return CurrentValue end
+            end
+
+            function Section:CreateDropdown(text, options, callback)
+                local DropdownFrame = Instance.new("Frame")
+                DropdownFrame.Size = UDim2.new(1, -20, 0, 30)
+                DropdownFrame.Position = UDim2.new(0, 10, 0, 0)
+                DropdownFrame.BackgroundColor3 = Library.Theme.ElementColor
+                DropdownFrame.BorderSizePixel = 0
+                DropdownFrame.Parent = SectionFrame
+                Instance.new("UICorner", DropdownFrame).CornerRadius = UDim.new(0, 6)
+
+                local DropdownLabel = Instance.new("TextLabel")
+                DropdownLabel.Size = UDim2.new(1, -40, 1, 0)
+                DropdownLabel.Position = UDim2.new(0, 10, 0, 0)
+                DropdownLabel.BackgroundTransparency = 1
+                DropdownLabel.Text = text .. ": " .. options[1]
+                DropdownLabel.TextColor3 = Library.Theme.TextColor
+                DropdownLabel.TextSize = 14
+                DropdownLabel.Font = Enum.Font.Gotham
+                DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+                DropdownLabel.Parent = DropdownFrame
+
+                local DropdownArrow = Instance.new("TextLabel")
+                DropdownArrow.Size = UDim2.new(0, 20, 1, 0)
+                DropdownArrow.Position = UDim2.new(1, -30, 0, 0)
+                DropdownArrow.BackgroundTransparency = 1
+                DropdownArrow.Text = "▼"
+                DropdownArrow.TextColor3 = Library.Theme.DarkText
+                DropdownArrow.TextSize = 12
+                DropdownArrow.Font = Enum.Font.GothamBold
+                DropdownArrow.Parent = DropdownFrame
+
+                local DropdownList = Instance.new("Frame")
+                DropdownList.Size = UDim2.new(1, 0, 0, 0)
+                DropdownList.Position = UDim2.new(0, 0, 1, 5)
+                DropdownList.BackgroundColor3 = Library.Theme.ElementColor
+                DropdownList.BorderSizePixel = 0
+                DropdownList.Parent = DropdownFrame
+                DropdownList.Visible = false
+                Instance.new("UICorner", DropdownList).CornerRadius = UDim.new(0, 6)
+                Instance.new("UIStroke", DropdownList).Color = Library.Theme.BorderColor
+
+                local ListLayout = Instance.new("UIListLayout")
+                ListLayout.Parent = DropdownList
+                ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                ListLayout.Padding = UDim.new(0, 5)
+
+                local ListPadding = Instance.new("UIPadding")
+                ListPadding.PaddingTop = UDim.new(0, 5)
+                ListPadding.PaddingBottom = UDim.new(0, 5)
+                ListPadding.Parent = DropdownList
+
+                local CurrentSelection = options[1]
+
+                for i, optionText in ipairs(options) do
+                    local OptionButton = Instance.new("TextButton")
+                    OptionButton.Size = UDim2.new(1, -10, 0, 25)
+                    OptionButton.Position = UDim2.new(0, 5, 0, 0)
+                    OptionButton.BackgroundColor3 = Library.Theme.ElementColor
+                    OptionButton.BorderSizePixel = 0
+                    OptionButton.Text = optionText
+                    OptionButton.TextColor3 = Library.Theme.TextColor
+                    OptionButton.TextSize = 14
+                    OptionButton.Font = Enum.Font.Gotham
+                    OptionButton.Parent = DropdownList
+                    Instance.new("UICorner", OptionButton).CornerRadius = UDim.new(0, 4)
+
+                    if optionText == CurrentSelection then
+                        OptionButton.BackgroundColor3 = Library.Theme.AccentColor
+                    end
+
+                    OptionButton.MouseButton1Click:Connect(function()
+                        CurrentSelection = optionText
+                        DropdownLabel.Text = text .. ": " .. CurrentSelection
+                        DropdownList.Visible = false
+                        CreateTween(DropdownArrow, {0.2}, {Rotation = 0}):Play()
+                        if callback then pcall(callback, CurrentSelection) end
+                        for _, btn in pairs(DropdownList:GetChildren()) do
+                            if btn:IsA("TextButton") then
+                                CreateTween(btn, {0.2}, {BackgroundColor3 = Library.Theme.ElementColor}):Play()
+                            end
+                        end
+                        CreateTween(OptionButton, {0.2}, {BackgroundColor3 = Library.Theme.AccentColor}):Play()
+                    end)
+                end
+
+                DropdownFrame.MouseButton1Click:Connect(function()
+                    DropdownList.Visible = not DropdownList.Visible
+                    if DropdownList.Visible then
+                        CreateTween(DropdownArrow, {0.2}, {Rotation = 180}):Play()
+                        DropdownList.Size = UDim2.new(1, 0, 0, ListLayout.AbsoluteContentSize.Y + ListPadding.PaddingTop.Offset + ListPadding.PaddingBottom.Offset)
+                    else
+                        CreateTween(DropdownArrow, {0.2}, {Rotation = 0}):Play()
+                    end
+                end)
+
+                return DropdownFrame, function() return CurrentSelection end
+            end
+
+            function Section:CreateMultiDropdown(text, options, callback)
+                local MultiDropdownFrame = Instance.new("Frame")
+                MultiDropdownFrame.Size = UDim2.new(1, -20, 0, 30)
+                MultiDropdownFrame.Position = UDim2.new(0, 10, 0, 0)
+                MultiDropdownFrame.BackgroundColor3 = Library.Theme.ElementColor
+                MultiDropdownFrame.BorderSizePixel = 0
+                MultiDropdownFrame.Parent = SectionFrame
+                Instance.new("UICorner", MultiDropdownFrame).CornerRadius = UDim.new(0, 6)
+
+                local MultiDropdownLabel = Instance.new("TextLabel")
+                MultiDropdownLabel.Size = UDim2.new(1, -40, 1, 0)
+                MultiDropdownLabel.Position = UDim2.new(0, 10, 0, 0)
+                MultiDropdownLabel.BackgroundTransparency = 1
+                MultiDropdownLabel.Text = text .. ": None"
+                MultiDropdownLabel.TextColor3 = Library.Theme.TextColor
+                MultiDropdownLabel.TextSize = 14
+                MultiDropdownLabel.Font = Enum.Font.Gotham
+                MultiDropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+                MultiDropdownLabel.TextWrapped = true
+                MultiDropdownLabel.Parent = MultiDropdownFrame
+
+                local MultiDropdownArrow = Instance.new("TextLabel")
+                MultiDropdownArrow.Size = UDim2.new(0, 20, 1, 0)
+                MultiDropdownArrow.Position = UDim2.new(1, -30, 0, 0)
+                MultiDropdownArrow.BackgroundTransparency = 1
+                MultiDropdownArrow.Text = "▼"
+                MultiDropdownArrow.TextColor3 = Library.Theme.DarkText
+                MultiDropdownArrow.TextSize = 12
+                MultiDropdownArrow.Font = Enum.Font.GothamBold
+                MultiDropdownArrow.Parent = MultiDropdownFrame
+
+                local MultiDropdownList = Instance.new("Frame")
+                MultiDropdownList.Size = UDim2.new(1, 0, 0, 0)
+                MultiDropdownList.Position = UDim2.new(0, 0, 1, 5)
+                MultiDropdownList.BackgroundColor3 = Library.Theme.ElementColor
+                MultiDropdownList.BorderSizePixel = 0
+                MultiDropdownList.Parent = MultiDropdownFrame
+                MultiDropdownList.Visible = false
+                Instance.new("UICorner", MultiDropdownList).CornerRadius = UDim.new(0, 6)
+                Instance.new("UIStroke", MultiDropdownList).Color = Library.Theme.BorderColor
+
+                local ListLayout = Instance.new("UIListLayout")
+                ListLayout.Parent = MultiDropdownList
+                ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                ListLayout.Padding = UDim.new(0, 5)
+
+                local ListPadding = Instance.new("UIPadding")
+                ListPadding.PaddingTop = UDim.new(0, 5)
+                ListPadding.PaddingBottom = UDim.new(0, 5)
+                ListPadding.Parent = MultiDropdownList
+
+                local SelectedOptions = {}
+
+                local function UpdateMultiDropdownLabel()
+                    local selectedNames = {}
+                    for optionName, isSelected in pairs(SelectedOptions) do
+                        if isSelected then
+                            table.insert(selectedNames, optionName)
+                        end
+                    end
+                    if #selectedNames == 0 then
+                        MultiDropdownLabel.Text = text .. ": None"
+                    else
+                        MultiDropdownLabel.Text = text .. ": " .. table.concat(selectedNames, ", ")
+                    end
+                end
+
+                for i, optionText in ipairs(options) do
+                    SelectedOptions[optionText] = false
+
+                    local OptionButton = Instance.new("TextButton")
+                    OptionButton.Size = UDim2.new(1, -10, 0, 25)
+                    OptionButton.Position = UDim2.new(0, 5, 0, 0)
+                    OptionButton.BackgroundColor3 = Library.Theme.ElementColor
+                    OptionButton.BorderSizePixel = 0
+                    OptionButton.Text = optionText
+                    OptionButton.TextColor3 = Library.Theme.TextColor
+                    OptionButton.TextSize = 14
+                    OptionButton.Font = Enum.Font.Gotham
+                    OptionButton.Parent = MultiDropdownList
+                    Instance.new("UICorner", OptionButton).CornerRadius = UDim.new(0, 4)
+
+                    OptionButton.MouseButton1Click:Connect(function()
+                        SelectedOptions[optionText] = not SelectedOptions[optionText]
+                        if SelectedOptions[optionText] then
+                            CreateTween(OptionButton, {0.2}, {BackgroundColor3 = Library.Theme.AccentColor}):Play()
+                        else
+                            CreateTween(OptionButton, {0.2}, {BackgroundColor3 = Library.Theme.ElementColor}):Play()
+                        end
+                        UpdateMultiDropdownLabel()
+                        if callback then pcall(callback, SelectedOptions) end
+                    end)
+                end
+
+                MultiDropdownFrame.MouseButton1Click:Connect(function()
+                    MultiDropdownList.Visible = not MultiDropdownList.Visible
+                    if MultiDropdownList.Visible then
+                        CreateTween(MultiDropdownArrow, {0.2}, {Rotation = 180}):Play()
+                        MultiDropdownList.Size = UDim2.new(1, 0, 0, ListLayout.AbsoluteContentSize.Y + ListPadding.PaddingTop.Offset + ListPadding.PaddingBottom.Offset)
+                    else
+                        CreateTween(MultiDropdownArrow, {0.2}, {Rotation = 0}):Play()
+                    end
+                end)
+
+                UpdateMultiDropdownLabel()
+                return MultiDropdownFrame, function() return SelectedOptions end
+            end
+
+            function Section:CreateInput(text, default, callback)
+                local InputFrame = Instance.new("Frame")
+                InputFrame.Size = UDim2.new(1, -20, 0, 30)
+                InputFrame.Position = UDim2.new(0, 10, 0, 0)
+                InputFrame.BackgroundColor3 = Library.Theme.ElementColor
+                InputFrame.BorderSizePixel = 0
+                InputFrame.Parent = SectionFrame
+                Instance.new("UICorner", InputFrame).CornerRadius = UDim.new(0, 6)
+
+                local InputLabel = Instance.new("TextLabel")
+                InputLabel.Size = UDim2.new(0, 60, 1, 0)
+                InputLabel.Position = UDim2.new(0, 10, 0, 0)
+                InputLabel.BackgroundTransparency = 1
+                InputLabel.Text = text .. ":"
+                InputLabel.TextColor3 = Library.Theme.TextColor
+                InputLabel.TextSize = 14
+                InputLabel.Font = Enum.Font.Gotham
+                InputLabel.TextXAlignment = Enum.TextXAlignment.Left
+                InputLabel.Parent = InputFrame
+
+                local TextBox = Instance.new("TextBox")
+                TextBox.Size = UDim2.new(1, -80, 1, -10)
+                TextBox.Position = UDim2.new(0, 70, 0, 5)
+                TextBox.BackgroundColor3 = Library.Theme.DarkText
+                TextBox.BorderSizePixel = 0
+                TextBox.Text = default or ""
+                TextBox.TextColor3 = Library.Theme.TextColor
+                TextBox.TextSize = 14
+                TextBox.Font = Enum.Font.Gotham
+                TextBox.TextXAlignment = Enum.TextXAlignment.Left
+                TextBox.ClearTextOnFocus = false
+                TextBox.Parent = InputFrame
+                Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 4)
+
+                TextBox.FocusLost:Connect(function()
+                    if callback then pcall(callback, TextBox.Text) end
+                end)
+                return InputFrame, function() return TextBox.Text end
+            end
+
+            function Section:CreateLabel(text)
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(1, -20, 0, 20)
+                Label.Position = UDim2.new(0, 10, 0, 0)
+                Label.BackgroundTransparency = 1
+                Label.Text = text
+                Label.TextColor3 = Library.Theme.DarkText
+                Label.TextSize = 13
+                Label.Font = Enum.Font.Gotham
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.TextWrapped = true
+                Label.Parent = SectionFrame
+                return Label
+            end
+
+            function Section:CreateParagraph(text)
+                local ParagraphFrame = Instance.new("Frame")
+                ParagraphFrame.Size = UDim2.new(1, -20, 0, 0) -- AutomaticSize.Y
+                ParagraphFrame.AutomaticSize = Enum.AutomaticSize.Y
+                ParagraphFrame.Position = UDim2.new(0, 10, 0, 0)
+                ParagraphFrame.BackgroundTransparency = 1
+                ParagraphFrame.Parent = SectionFrame
+
+                local ParagraphLabel = Instance.new("TextLabel")
+                ParagraphLabel.Size = UDim2.new(1, 0, 1, 0)
+                ParagraphLabel.BackgroundTransparency = 1
+                ParagraphLabel.Text = text
+                ParagraphLabel.TextColor3 = Library.Theme.DarkText
+                ParagraphLabel.TextSize = 13
+                ParagraphLabel.Font = Enum.Font.Gotham
+                ParagraphLabel.TextXAlignment = Enum.TextXAlignment.Left
+                ParagraphLabel.TextWrapped = true
+                ParagraphLabel.Parent = ParagraphFrame
+                return ParagraphFrame
+            end
+
+            return Section
+        end
+        return Tab
     end
 
     return Window
