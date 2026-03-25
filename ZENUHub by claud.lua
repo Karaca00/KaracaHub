@@ -156,8 +156,8 @@ end
 local function MakeDraggable(frame, handle)
     handle = handle or frame
     local dragging = false
-    local dragStart = nil          -- ตำแหน่งเมาส์ตอนเริ่มกด (Vector2)
-    local startPos = nil           -- ตำแหน่ง frame ตอนเริ่มกด (UDim2)
+    local dragStart = nil
+    local startPos = nil
 
     handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or
@@ -184,12 +184,7 @@ local function MakeDraggable(frame, handle)
         local newX = startPos.X.Offset + delta.X
         local newY = startPos.Y.Offset + delta.Y
 
-        -- จำกัดไม่ให้หลุดขอบจอ
-        local viewport = Workspace.CurrentCamera.ViewportSize
-        local frameSize = frame.AbsoluteSize
-        newX = math.clamp(newX, 0, viewport.X - frameSize.X)
-        newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)
-
+        -- ********** ลบส่วน math.clamp ออก **********
         frame.Position = UDim2.new(0, newX, 0, newY)
     end)
 end
@@ -1034,9 +1029,12 @@ function ZENUHub:CreateWindow(opts)
                     Position=UDim2.new(1,-24,0,0),
                     TextXAlignment=Enum.TextXAlignment.Center, ZIndex=7})
 
-                local DL=New("Frame",{Parent=DB, BackgroundColor3=T.BG_DROP,
+                local DL = New("Frame",{
+                    Parent=DB, BackgroundColor3=T.BG_DROP,
                     Size=UDim2.new(1,0,0,0), Position=UDim2.new(0,0,1,4),
-                    BorderSizePixel=0, Visible=false, ZIndex=50, ClipsDescendants=true})
+                    BorderSizePixel=0, Visible=false, ZIndex=100,  -- เปลี่ยน ZIndex เป็น 100
+                    ClipsDescendants=false,  -- อนุญาตให้แสดงทับ
+                })
                 Corner(DL,6); Stroke(DL,1,T.BORDER)
 
                 local SR2=New("Frame",{Parent=DL, BackgroundColor3=T.BG_INPUT,
@@ -1168,9 +1166,12 @@ function ZENUHub:CreateWindow(opts)
                     Position=UDim2.new(1,-24,0,0),
                     TextXAlignment=Enum.TextXAlignment.Center, ZIndex=7})
 
-                local DL2=New("Frame",{Parent=DB2, BackgroundColor3=T.BG_DROP,
+                local DL2 = New("Frame",{
+                    Parent=DB2, BackgroundColor3=T.BG_DROP,
                     Size=UDim2.new(1,0,0,0), Position=UDim2.new(0,0,1,4),
-                    BorderSizePixel=0, Visible=false, ZIndex=50, ClipsDescendants=true})
+                    BorderSizePixel=0, Visible=false, ZIndex=100,
+                    ClipsDescendants=false,
+                })
                 Corner(DL2,6); Stroke(DL2,1,T.BORDER)
 
                 local SRM=New("Frame",{Parent=DL2, BackgroundColor3=T.BG_INPUT,
