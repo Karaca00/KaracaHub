@@ -997,7 +997,7 @@ function ZENUHub:CreateWindow(opts)
                 local sel = o.Default or (items[1] or "None")
                 local cb = o.Callback or function() end; local flag = o.Flag
             
-                -- Row with automatic height
+                -- Row with automatic height and padding
                 local Row = New("Frame", {
                     Parent = IF,
                     BackgroundColor3 = T.BG_CARD,
@@ -1007,6 +1007,7 @@ function ZENUHub:CreateWindow(opts)
                     AutomaticSize = Enum.AutomaticSize.Y,
                 })
                 Corner(Row, 6)
+                Pad(Row, 0, 0, 10, 10)   -- margin ซ้ายขวา 10 px
             
                 -- Label
                 New("TextLabel", {
@@ -1016,19 +1017,19 @@ function ZENUHub:CreateWindow(opts)
                     TextSize = 11,
                     TextColor3 = T.TXT_SEC,
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -20, 0, 18),
-                    Position = UDim2.new(0, 10, 0, 5),
+                    Size = UDim2.new(1, 0, 0, 18),
+                    Position = UDim2.new(0, 0, 0, 5),
                     TextXAlignment = Enum.TextXAlignment.Left,
                     ZIndex = 6,
                 })
             
-                -- Dropdown button (now at top of Row)
+                -- Dropdown button (full width)
                 local DB = New("TextButton", {
                     Parent = Row,
                     Text = "",
                     BackgroundColor3 = T.BG_INPUT,
-                    Size = UDim2.new(1, -20, 0, 26),
-                    Position = UDim2.new(0, 10, 0, 0),   -- placed at top of Row
+                    Size = UDim2.new(1, 0, 0, 26),
+                    Position = UDim2.new(0, 0, 0, 0),
                     BorderSizePixel = 0,
                     ZIndex = 6,
                     ClipsDescendants = false,
@@ -1061,12 +1062,12 @@ function ZENUHub:CreateWindow(opts)
                     ZIndex = 7,
                 })
             
-                -- Dropdown list frame – now child of Row
+                -- Dropdown list frame – child of Row (below DB)
                 local DL = New("Frame", {
                     Parent = Row,
                     BackgroundColor3 = T.BG_DROP,
-                    Size = UDim2.new(1, -20, 0, 0),      -- width matches DB
-                    Position = UDim2.new(0, 10, 0, 30),  -- just below DB (26 + 4)
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Position = UDim2.new(0, 0, 0, 30),   -- 26 + 4 spacing
                     BorderSizePixel = 0,
                     Visible = false,
                     ZIndex = 100,
@@ -1169,7 +1170,7 @@ function ZENUHub:CreateWindow(opts)
                     DL.Visible = open
                     if open then
                         local height = math.min(#items * 28 + 44, 128)
-                        DL.Size = UDim2.new(1, -20, 0, height)
+                        DL.Size = UDim2.new(1, 0, 0, height)
                         SI.Text = ""
                         BuildDD("")
                     end
@@ -1203,7 +1204,7 @@ function ZENUHub:CreateWindow(opts)
                 local selected = {}
                 for _, v in ipairs(defaults) do selected[v] = true end
             
-                -- Row with automatic height
+                -- Row with automatic height and padding
                 local Row = New("Frame", {
                     Parent = IF,
                     BackgroundColor3 = T.BG_CARD,
@@ -1213,13 +1214,14 @@ function ZENUHub:CreateWindow(opts)
                     AutomaticSize = Enum.AutomaticSize.Y,
                 })
                 Corner(Row, 6)
+                Pad(Row, 0, 0, 10, 10)   -- margin ซ้ายขวา 10 px
             
                 -- Label row with badge
                 local LblRow = New("Frame", {
                     Parent = Row,
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -20, 0, 18),
-                    Position = UDim2.new(0, 10, 0, 5),
+                    Size = UDim2.new(1, 0, 0, 18),
+                    Position = UDim2.new(0, 0, 0, 5),
                     ZIndex = 6,
                 })
                 New("TextLabel", {
@@ -1249,13 +1251,13 @@ function ZENUHub:CreateWindow(opts)
                     })
                 end
             
-                -- Dropdown button (placed at top of Row)
+                -- Dropdown button (full width)
                 local DB2 = New("TextButton", {
                     Parent = Row,
                     Text = "",
                     BackgroundColor3 = T.BG_INPUT,
-                    Size = UDim2.new(1, -20, 0, 26),
-                    Position = UDim2.new(0, 10, 0, 0),
+                    Size = UDim2.new(1, 0, 0, 26),
+                    Position = UDim2.new(0, 0, 0, 0),
                     BorderSizePixel = 0,
                     ZIndex = 6,
                     ClipsDescendants = false,
@@ -1307,12 +1309,12 @@ function ZENUHub:CreateWindow(opts)
                     ZIndex = 7,
                 })
             
-                -- Multi‑dropdown list frame – child of Row
+                -- Multi‑dropdown list frame – child of Row (below DB2)
                 local DL2 = New("Frame", {
                     Parent = Row,
                     BackgroundColor3 = T.BG_DROP,
-                    Size = UDim2.new(1, -20, 0, 0),
-                    Position = UDim2.new(0, 10, 0, 30),   -- below DB2 (26 + 4)
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Position = UDim2.new(0, 0, 0, 30),   -- 26 + 4 spacing
                     BorderSizePixel = 0,
                     Visible = false,
                     ZIndex = 100,
@@ -1465,7 +1467,7 @@ function ZENUHub:CreateWindow(opts)
                     DL2.Visible = openM
                     if openM then
                         local height = math.min(#items * 30 + 44, 128)
-                        DL2.Size = UDim2.new(1, -20, 0, height)
+                        DL2.Size = UDim2.new(1, 0, 0, height)
                         SDDM.Text = ""
                         BuildMD("")
                     end
