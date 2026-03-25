@@ -770,4 +770,4 @@ end
 ]]--
 
 -- Auto run เมื่อใส่เป็น Script
---Library:Create()
+Library:Create()
