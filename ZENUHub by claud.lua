@@ -155,37 +155,31 @@ end
 -- ============================================================
 local function MakeDraggable(frame, handle)
     handle = handle or frame
-    local dragging = false
-    local dragStart = nil
-    local startPos = nil
+    local dragging, dragStart, startPos = false, nil, nil
 
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or
-           input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = Vector2.new(input.Position.X, input.Position.Y)
-            startPos = frame.Position
+    handle.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1
+        or inp.UserInputType == Enum.UserInputType.Touch then
+            dragging  = true
+            dragStart = inp.Position
+            startPos  = frame.Position
         end
     end)
-
-    handle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or
-           input.UserInputType == Enum.UserInputType.Touch then
+    handle.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1
+        or inp.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
-
-    UserInputService.InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(inp)
         if not dragging then return end
-        if input.UserInputType ~= Enum.UserInputType.MouseMovement and
-           input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-        local delta = Vector2.new(input.Position.X, input.Position.Y) - dragStart
-        local newX = startPos.X.Offset + delta.X
-        local newY = startPos.Y.Offset + delta.Y
-
-        -- ********** ลบส่วน math.clamp ออก **********
-        frame.Position = UDim2.new(0, newX, 0, newY)
+        if inp.UserInputType ~= Enum.UserInputType.MouseMovement
+        and inp.UserInputType ~= Enum.UserInputType.Touch then return end
+        local d = inp.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + d.X,
+            startPos.Y.Scale, startPos.Y.Offset + d.Y
+        )
     end)
 end
 
