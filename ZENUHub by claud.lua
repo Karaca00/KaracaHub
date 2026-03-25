@@ -992,490 +992,281 @@ function ZENUHub:CreateWindow(opts)
             --  DROPDOWN  (single, with search)
             -- ────────────────────────────────────────────────────
             function Section:AddDropdown(o)
-                o = o or {}
-                local lbl = o.Name or "Dropdown"; local items = o.Items or {}
-                local sel = o.Default or (items[1] or "None")
-                local cb = o.Callback or function() end; local flag = o.Flag
-            
-                -- Row with automatic height and padding
-                local Row = New("Frame", {
-                    Parent = IF,
-                    BackgroundColor3 = T.BG_CARD,
-                    BorderSizePixel = 0,
-                    ZIndex = 5,
-                    ClipsDescendants = false,
-                    AutomaticSize = Enum.AutomaticSize.Y,
+                o=o or {}
+                local lbl=o.Name or "Dropdown"; local items=o.Items or {}
+                local sel=o.Default or (items[1] or "None")
+                local cb=o.Callback or function() end; local flag=o.Flag
+
+                local Row=New("Frame",{Parent=IF, BackgroundColor3=T.BG_CARD,
+                    Size=UDim2.new(1,0,0,56), BorderSizePixel=0,
+                    ZIndex=5, ClipsDescendants=false})
+                Corner(Row,6)
+                New("TextLabel",{Parent=Row, Text=lbl,
+                    Font=Enum.Font.Gotham, TextSize=11, TextColor3=T.TXT_SEC,
+                    BackgroundTransparency=1,
+                    Size=UDim2.new(1,-20,0,18), Position=UDim2.new(0,10,0,5),
+                    TextXAlignment=Enum.TextXAlignment.Left, ZIndex=6})
+
+                local DB=New("TextButton",{Parent=Row, Text="",
+                    BackgroundColor3=T.BG_INPUT,
+                    Size=UDim2.new(1,-20,0,26), Position=UDim2.new(0,10,0,24),
+                    BorderSizePixel=0, ZIndex=6, ClipsDescendants=false})
+                Corner(DB,5); Stroke(DB,1,T.BORDER)
+                local SL=New("TextLabel",{Parent=DB, Text=sel,
+                    Font=Enum.Font.Gotham, TextSize=11, TextColor3=T.TXT_PRI,
+                    BackgroundTransparency=1,
+                    Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,8,0,0),
+                    TextXAlignment=Enum.TextXAlignment.Left, ZIndex=7})
+                New("TextLabel",{Parent=DB, Text="v",
+                    Font=Enum.Font.GothamBold, TextSize=11, TextColor3=T.TXT_MUTED,
+                    BackgroundTransparency=1, Size=UDim2.new(0,22,1,0),
+                    Position=UDim2.new(1,-24,0,0),
+                    TextXAlignment=Enum.TextXAlignment.Center, ZIndex=7})
+
+                local DL = New("Frame",{
+                    Parent=DB, BackgroundColor3=T.BG_DROP,
+                    Size=UDim2.new(1,0,0,0), Position=UDim2.new(0,0,1,4),
+                    BorderSizePixel=0, Visible=false, ZIndex=100,  -- เปลี่ยน ZIndex เป็น 100
+                    ClipsDescendants=false,  -- อนุญาตให้แสดงทับ
                 })
-                Corner(Row, 6)
-                Pad(Row, 0, 0, 10, 10)   -- margin ซ้ายขวา 10 px
-            
-                -- Label
-                New("TextLabel", {
-                    Parent = Row,
-                    Text = lbl,
-                    Font = Enum.Font.Gotham,
-                    TextSize = 11,
-                    TextColor3 = T.TXT_SEC,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 18),
-                    Position = UDim2.new(0, 0, 0, 5),
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 6,
-                })
-            
-                -- Dropdown button (full width)
-                local DB = New("TextButton", {
-                    Parent = Row,
-                    Text = "",
-                    BackgroundColor3 = T.BG_INPUT,
-                    Size = UDim2.new(1, 0, 0, 26),
-                    Position = UDim2.new(0, 0, 0, 0),
-                    BorderSizePixel = 0,
-                    ZIndex = 6,
-                    ClipsDescendants = false,
-                })
-                Corner(DB, 5)
-                Stroke(DB, 1, T.BORDER)
-            
-                local SL = New("TextLabel", {
-                    Parent = DB,
-                    Text = sel,
-                    Font = Enum.Font.Gotham,
-                    TextSize = 11,
-                    TextColor3 = T.TXT_PRI,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -28, 1, 0),
-                    Position = UDim2.new(0, 8, 0, 0),
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 7,
-                })
-                New("TextLabel", {
-                    Parent = DB,
-                    Text = "v",
-                    Font = Enum.Font.GothamBold,
-                    TextSize = 11,
-                    TextColor3 = T.TXT_MUTED,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(0, 22, 1, 0),
-                    Position = UDim2.new(1, -24, 0, 0),
-                    TextXAlignment = Enum.TextXAlignment.Center,
-                    ZIndex = 7,
-                })
-            
-                -- Dropdown list frame – child of Row (below DB)
-                local DL = New("Frame", {
-                    Parent = Row,
-                    BackgroundColor3 = T.BG_DROP,
-                    Size = UDim2.new(1, 0, 0, 0),
-                    Position = UDim2.new(0, 0, 0, 30),   -- 26 + 4 spacing
-                    BorderSizePixel = 0,
-                    Visible = false,
-                    ZIndex = 100,
-                    ClipsDescendants = false,
-                })
-                Corner(DL, 6)
-                Stroke(DL, 1, T.BORDER)
-            
-                -- Search bar inside dropdown
-                local SR2 = New("Frame", {
-                    Parent = DL,
-                    BackgroundColor3 = T.BG_INPUT,
-                    Size = UDim2.new(1, -12, 0, 22),
-                    Position = UDim2.new(0, 6, 0, 6),
-                    BorderSizePixel = 0,
-                    ZIndex = 51,
-                })
-                Corner(SR2, 4)
-                Stroke(SR2, 1, T.BORDER)
-                local SI = New("TextBox", {
-                    Parent = SR2,
-                    Text = "",
-                    PlaceholderText = "Search...",
-                    Font = Enum.Font.Gotham,
-                    TextSize = 10,
-                    TextColor3 = T.TXT_PRI,
-                    PlaceholderColor3 = T.TXT_MUTED,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -8, 1, 0),
-                    Position = UDim2.new(0, 4, 0, 0),
-                    ClearTextOnFocus = false,
-                    ZIndex = 52,
-                })
-            
-                -- Scrollable item list
-                local IL2 = New("ScrollingFrame", {
-                    Parent = DL,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, -36),
-                    Position = UDim2.new(0, 0, 0, 34),
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = T.RED,
-                    BorderSizePixel = 0,
-                    CanvasSize = UDim2.new(0, 0, 0, 0),
-                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                    ZIndex = 51,
-                })
-                New("UIListLayout", {
-                    Parent = IL2,
-                    Padding = UDim.new(0, 2),
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                })
-                Pad(IL2, 2, 2, 4, 4)
-            
-                local allB = {}
+                Corner(DL,6); Stroke(DL,1,T.BORDER)
+
+                local SR2=New("Frame",{Parent=DL, BackgroundColor3=T.BG_INPUT,
+                    Size=UDim2.new(1,-12,0,22), Position=UDim2.new(0,6,0,6),
+                    BorderSizePixel=0, ZIndex=51})
+                Corner(SR2,4); Stroke(SR2,1,T.BORDER)
+                local SI=New("TextBox",{Parent=SR2, Text="", PlaceholderText="Search...",
+                    Font=Enum.Font.Gotham, TextSize=10,
+                    TextColor3=T.TXT_PRI, PlaceholderColor3=T.TXT_MUTED,
+                    BackgroundTransparency=1, Size=UDim2.new(1,-8,1,0),
+                    Position=UDim2.new(0,4,0,0), ClearTextOnFocus=false, ZIndex=52})
+
+                local IL2=New("ScrollingFrame",{Parent=DL, BackgroundTransparency=1,
+                    Size=UDim2.new(1,0,1,-36), Position=UDim2.new(0,0,0,34),
+                    ScrollBarThickness=2, ScrollBarImageColor3=T.RED,
+                    BorderSizePixel=0, CanvasSize=UDim2.new(0,0,0,0),
+                    AutomaticCanvasSize=Enum.AutomaticSize.Y, ZIndex=51})
+                New("UIListLayout",{Parent=IL2,Padding=UDim.new(0,2),SortOrder=Enum.SortOrder.LayoutOrder})
+                Pad(IL2,2,2,4,4)
+
+                local allB={}
                 local function BuildDD(f)
-                    for _, v in ipairs(allB) do v:Destroy() end
-                    allB = {}
-                    for _, it in ipairs(items) do
-                        if f == "" or it:lower():find(f:lower(), 1, true) then
-                            local ib = New("TextButton", {
-                                Parent = IL2,
-                                Text = it,
-                                Font = Enum.Font.Gotham,
-                                TextSize = 11,
-                                TextColor3 = T.TXT_PRI,
-                                BackgroundColor3 = T.BG_DROP,
-                                Size = UDim2.new(1, 0, 0, 26),
-                                BorderSizePixel = 0,
-                                TextXAlignment = Enum.TextXAlignment.Left,
-                                ZIndex = 52,
-                            })
-                            Corner(ib, 4)
-                            Pad(ib, 0, 0, 8, 4)
-                            ib.MouseEnter:Connect(function()
-                                Tween(ib, { BackgroundColor3 = T.BG_CARD_H }, 0.1)
-                            end)
-                            ib.MouseLeave:Connect(function()
-                                Tween(ib, { BackgroundColor3 = T.BG_DROP }, 0.1)
-                            end)
+                    for _,v in ipairs(allB) do v:Destroy() end; allB={}
+                    for _,it in ipairs(items) do
+                        if f=="" or it:lower():find(f:lower(),1,true) then
+                            local ib=New("TextButton",{Parent=IL2, Text=it,
+                                Font=Enum.Font.Gotham, TextSize=11, TextColor3=T.TXT_PRI,
+                                BackgroundColor3=T.BG_DROP,
+                                Size=UDim2.new(1,0,0,26), BorderSizePixel=0,
+                                TextXAlignment=Enum.TextXAlignment.Left, ZIndex=52})
+                            Corner(ib,4); Pad(ib,0,0,8,4)
+                            ib.MouseEnter:Connect(function() Tween(ib,{BackgroundColor3=T.BG_CARD_H},0.1) end)
+                            ib.MouseLeave:Connect(function() Tween(ib,{BackgroundColor3=T.BG_DROP},0.1) end)
                             ib.MouseButton1Click:Connect(function()
-                                sel = it
-                                SL.Text = it
-                                DL.Visible = false
-                                cb(it)
-                                if flag then ZENUHub.Flags[flag] = it end
+                                sel=it; SL.Text=it; DL.Visible=false; cb(it)
+                                if flag then ZENUHub.Flags[flag]=it end
                             end)
-                            table.insert(allB, ib)
+                            table.insert(allB,ib)
                         end
                     end
                 end
-                BuildDD("")
-                SI:GetPropertyChangedSignal("Text"):Connect(function()
-                    BuildDD(SI.Text)
-                end)
-            
-                local open = false
+                BuildDD(""); SI:GetPropertyChangedSignal("Text"):Connect(function() BuildDD(SI.Text) end)
+                local open=false
                 DB.MouseButton1Click:Connect(function()
                     open = not open
                     DL.Visible = open
                     if open then
-                        local height = math.min(#items * 28 + 44, 128)
-                        DL.Size = UDim2.new(1, 0, 0, height)
+                        DL.Size = UDim2.new(1,0,0, math.min(#items * 28 + 44, 128))
                         SI.Text = ""
                         BuildDD("")
                     end
                 end)
-            
-                local item = { _frame = Row, _label = lbl, Value = sel }
-                function item:Set(v)
-                    sel = v
-                    SL.Text = v
-                    item.Value = v
-                end
-                function item:Refresh(ni)
-                    items = ni
-                    BuildDD(SI.Text)
-                end
-                table.insert(Section._items, item)
-                return item
+                local item={_frame=Row,_label=lbl,Value=sel}
+                function item:Set(v) sel=v; SL.Text=v; item.Value=v end
+                function item:Refresh(ni) items=ni; BuildDD(SI.Text) end
+                table.insert(Section._items,item); return item
             end
 
             -- ────────────────────────────────────────────────────
             --  MULTI-DROPDOWN  (with MaxSelect support)
             -- ────────────────────────────────────────────────────
             function Section:AddMultiDropdown(o)
-                o = o or {}
-                local lbl = o.Name or "Multi Select"
-                local items = o.Items or {}
-                local defaults = o.Default or {}
-                local maxSel = o.MaxSelect or math.huge
-                local cb = o.Callback or function() end
-            
-                local selected = {}
-                for _, v in ipairs(defaults) do selected[v] = true end
-            
-                -- Row with automatic height and padding
-                local Row = New("Frame", {
-                    Parent = IF,
-                    BackgroundColor3 = T.BG_CARD,
-                    BorderSizePixel = 0,
-                    ZIndex = 5,
-                    ClipsDescendants = false,
-                    AutomaticSize = Enum.AutomaticSize.Y,
-                })
-                Corner(Row, 6)
-                Pad(Row, 0, 0, 10, 10)   -- margin ซ้ายขวา 10 px
-            
-                -- Label row with badge
-                local LblRow = New("Frame", {
-                    Parent = Row,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 18),
-                    Position = UDim2.new(0, 0, 0, 5),
-                    ZIndex = 6,
-                })
-                New("TextLabel", {
-                    Parent = LblRow,
-                    Text = lbl,
-                    Font = Enum.Font.Gotham,
-                    TextSize = 11,
-                    TextColor3 = T.TXT_SEC,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(0.7, 0, 1, 0),
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 6,
-                })
+                o=o or {}
+                local lbl      = o.Name      or "Multi Select"
+                local items    = o.Items     or {}
+                local defaults = o.Default   or {}
+                local maxSel   = o.MaxSelect or math.huge   -- *** NEW ***
+                local cb       = o.Callback  or function() end
+
+                local selected={}
+                for _,v in ipairs(defaults) do selected[v]=true end
+
+                local Row=New("Frame",{Parent=IF, BackgroundColor3=T.BG_CARD,
+                    Size=UDim2.new(1,0,0,56), BorderSizePixel=0,
+                    ZIndex=5, ClipsDescendants=false})
+                Corner(Row,6)
+
+                -- Label row with count badge
+                local LblRow=New("Frame",{Parent=Row, BackgroundTransparency=1,
+                    Size=UDim2.new(1,-20,0,18), Position=UDim2.new(0,10,0,5),
+                    ZIndex=6})
+                New("TextLabel",{Parent=LblRow, Text=lbl,
+                    Font=Enum.Font.Gotham, TextSize=11, TextColor3=T.TXT_SEC,
+                    BackgroundTransparency=1,
+                    Size=UDim2.new(0.7,0,1,0),
+                    TextXAlignment=Enum.TextXAlignment.Left, ZIndex=6})
+                -- Max badge (shows "0 / maxSel")
                 local MaxBadge
                 if maxSel ~= math.huge then
-                    MaxBadge = New("TextLabel", {
-                        Parent = LblRow,
-                        Text = "0/" .. tostring(maxSel),
-                        Font = Enum.Font.GothamBold,
-                        TextSize = 10,
-                        TextColor3 = T.RED,
-                        BackgroundTransparency = 1,
-                        Size = UDim2.new(0.3, 0, 1, 0),
-                        Position = UDim2.new(0.7, 0, 0, 0),
-                        TextXAlignment = Enum.TextXAlignment.Right,
-                        ZIndex = 6,
-                    })
+                    MaxBadge=New("TextLabel",{Parent=LblRow,
+                        Text="0/"..tostring(maxSel),
+                        Font=Enum.Font.GothamBold, TextSize=10,
+                        TextColor3=T.RED, BackgroundTransparency=1,
+                        Size=UDim2.new(0.3,0,1,0),
+                        Position=UDim2.new(0.7,0,0,0),
+                        TextXAlignment=Enum.TextXAlignment.Right, ZIndex=6})
                 end
-            
-                -- Dropdown button (full width)
-                local DB2 = New("TextButton", {
-                    Parent = Row,
-                    Text = "",
-                    BackgroundColor3 = T.BG_INPUT,
-                    Size = UDim2.new(1, 0, 0, 26),
-                    Position = UDim2.new(0, 0, 0, 0),
-                    BorderSizePixel = 0,
-                    ZIndex = 6,
-                    ClipsDescendants = false,
-                })
-                Corner(DB2, 5)
-                Stroke(DB2, 1, T.BORDER)
-            
+
+                local DB2=New("TextButton",{Parent=Row, Text="",
+                    BackgroundColor3=T.BG_INPUT,
+                    Size=UDim2.new(1,-20,0,26), Position=UDim2.new(0,10,0,24),
+                    BorderSizePixel=0, ZIndex=6, ClipsDescendants=false})
+                Corner(DB2,5); Stroke(DB2,1,T.BORDER)
+
                 local function CountSel()
-                    local n = 0
-                    for _ in pairs(selected) do n = n + 1 end
-                    return n
+                    local n=0; for _ in pairs(selected) do n=n+1 end; return n
                 end
                 local function GetSelText()
-                    local t = {}
-                    for k in pairs(selected) do table.insert(t, k) end
-                    return #t == 0 and "None" or table.concat(t, ", ")
+                    local t={}; for k in pairs(selected) do table.insert(t,k) end
+                    return #t==0 and "None" or table.concat(t,", ")
                 end
                 local function UpdateBadge()
                     if MaxBadge then
-                        local n = CountSel()
-                        MaxBadge.Text = n .. "/" .. tostring(maxSel)
-                        MaxBadge.TextColor3 = (n >= maxSel) and T.RED_B or T.RED
+                        local n=CountSel()
+                        MaxBadge.Text=n.."/"..tostring(maxSel)
+                        MaxBadge.TextColor3 = (n>=maxSel) and T.RED_B or T.RED
                     end
                 end
-            
-                local SLM = New("TextLabel", {
-                    Parent = DB2,
-                    Text = GetSelText(),
-                    Font = Enum.Font.Gotham,
-                    TextSize = 10,
-                    TextColor3 = T.TXT_PRI,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -28, 1, 0),
-                    Position = UDim2.new(0, 8, 0, 0),
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    TextTruncate = Enum.TextTruncate.AtEnd,
-                    ZIndex = 7,
+
+                local SLM=New("TextLabel",{Parent=DB2, Text=GetSelText(),
+                    Font=Enum.Font.Gotham, TextSize=10, TextColor3=T.TXT_PRI,
+                    BackgroundTransparency=1,
+                    Size=UDim2.new(1,-28,1,0), Position=UDim2.new(0,8,0,0),
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    TextTruncate=Enum.TextTruncate.AtEnd, ZIndex=7})
+                New("TextLabel",{Parent=DB2, Text="v",
+                    Font=Enum.Font.GothamBold, TextSize=11, TextColor3=T.TXT_MUTED,
+                    BackgroundTransparency=1, Size=UDim2.new(0,22,1,0),
+                    Position=UDim2.new(1,-24,0,0),
+                    TextXAlignment=Enum.TextXAlignment.Center, ZIndex=7})
+
+                local DL2 = New("Frame",{
+                    Parent=DB2, BackgroundColor3=T.BG_DROP,
+                    Size=UDim2.new(1,0,0,0), Position=UDim2.new(0,0,1,4),
+                    BorderSizePixel=0, Visible=false, ZIndex=100,
+                    ClipsDescendants=false,
                 })
-                New("TextLabel", {
-                    Parent = DB2,
-                    Text = "v",
-                    Font = Enum.Font.GothamBold,
-                    TextSize = 11,
-                    TextColor3 = T.TXT_MUTED,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(0, 22, 1, 0),
-                    Position = UDim2.new(1, -24, 0, 0),
-                    TextXAlignment = Enum.TextXAlignment.Center,
-                    ZIndex = 7,
-                })
-            
-                -- Multi‑dropdown list frame – child of Row (below DB2)
-                local DL2 = New("Frame", {
-                    Parent = Row,
-                    BackgroundColor3 = T.BG_DROP,
-                    Size = UDim2.new(1, 0, 0, 0),
-                    Position = UDim2.new(0, 0, 0, 30),   -- 26 + 4 spacing
-                    BorderSizePixel = 0,
-                    Visible = false,
-                    ZIndex = 100,
-                    ClipsDescendants = false,
-                })
-                Corner(DL2, 6)
-                Stroke(DL2, 1, T.BORDER)
-            
-                local SRM = New("Frame", {
-                    Parent = DL2,
-                    BackgroundColor3 = T.BG_INPUT,
-                    Size = UDim2.new(1, -12, 0, 22),
-                    Position = UDim2.new(0, 6, 0, 6),
-                    BorderSizePixel = 0,
-                    ZIndex = 51,
-                })
-                Corner(SRM, 4)
-                Stroke(SRM, 1, T.BORDER)
-                local SDDM = New("TextBox", {
-                    Parent = SRM,
-                    Text = "",
-                    PlaceholderText = "Search...",
-                    Font = Enum.Font.Gotham,
-                    TextSize = 10,
-                    TextColor3 = T.TXT_PRI,
-                    PlaceholderColor3 = T.TXT_MUTED,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -8, 1, 0),
-                    Position = UDim2.new(0, 4, 0, 0),
-                    ClearTextOnFocus = false,
-                    ZIndex = 52,
-                })
-            
-                local ILM = New("ScrollingFrame", {
-                    Parent = DL2,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, -36),
-                    Position = UDim2.new(0, 0, 0, 34),
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = T.RED,
-                    BorderSizePixel = 0,
-                    CanvasSize = UDim2.new(0, 0, 0, 0),
-                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                    ZIndex = 51,
-                })
-                New("UIListLayout", {
-                    Parent = ILM,
-                    Padding = UDim.new(0, 2),
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                })
-                Pad(ILM, 2, 2, 4, 4)
-            
-                local allIBM = {}
+                Corner(DL2,6); Stroke(DL2,1,T.BORDER)
+
+                local SRM=New("Frame",{Parent=DL2, BackgroundColor3=T.BG_INPUT,
+                    Size=UDim2.new(1,-12,0,22), Position=UDim2.new(0,6,0,6),
+                    BorderSizePixel=0, ZIndex=51})
+                Corner(SRM,4); Stroke(SRM,1,T.BORDER)
+                local SDDM=New("TextBox",{Parent=SRM, Text="", PlaceholderText="Search...",
+                    Font=Enum.Font.Gotham, TextSize=10,
+                    TextColor3=T.TXT_PRI, PlaceholderColor3=T.TXT_MUTED,
+                    BackgroundTransparency=1, Size=UDim2.new(1,-8,1,0),
+                    Position=UDim2.new(0,4,0,0), ClearTextOnFocus=false, ZIndex=52})
+
+                local ILM=New("ScrollingFrame",{Parent=DL2, BackgroundTransparency=1,
+                    Size=UDim2.new(1,0,1,-36), Position=UDim2.new(0,0,0,34),
+                    ScrollBarThickness=2, ScrollBarImageColor3=T.RED,
+                    BorderSizePixel=0, CanvasSize=UDim2.new(0,0,0,0),
+                    AutomaticCanvasSize=Enum.AutomaticSize.Y, ZIndex=51})
+                New("UIListLayout",{Parent=ILM,Padding=UDim.new(0,2),SortOrder=Enum.SortOrder.LayoutOrder})
+                Pad(ILM,2,2,4,4)
+
+                local allIBM={}
                 local function BuildMD(f)
-                    for _, v in ipairs(allIBM) do v:Destroy() end
-                    allIBM = {}
-                    local atMax = (CountSel() >= maxSel)
-                    for _, it in ipairs(items) do
-                        if f == "" or it:lower():find(f:lower(), 1, true) then
-                            local isOn = selected[it] == true
-                            local dimmed = (atMax and not isOn)
-                            local iRow = New("Frame", {
-                                Parent = ILM,
-                                BackgroundColor3 = isOn and T.RED_DIM or T.BG_DROP,
-                                Size = UDim2.new(1, 0, 0, 28),
-                                BorderSizePixel = 0,
-                                ZIndex = 52,
-                            })
-                            Corner(iRow, 4)
-                            New("TextLabel", {
-                                Parent = iRow,
-                                Text = it,
-                                Font = Enum.Font.Gotham,
-                                TextSize = 11,
-                                TextColor3 = dimmed and T.TXT_MUTED or T.TXT_PRI,
-                                BackgroundTransparency = 1,
-                                Size = UDim2.new(1, -36, 1, 0),
-                                Position = UDim2.new(0, 8, 0, 0),
-                                TextXAlignment = Enum.TextXAlignment.Left,
-                                ZIndex = 53,
-                            })
-                            local ck = New("Frame", {
-                                Parent = iRow,
-                                BackgroundColor3 = isOn and T.RED or T.BG_CARD_H,
-                                Size = UDim2.new(0, 16, 0, 16),
-                                Position = UDim2.new(1, -26, 0.5, -8),
-                                BorderSizePixel = 0,
-                                ZIndex = 53,
-                            })
-                            Corner(ck, 4)
+                    for _,v in ipairs(allIBM) do v:Destroy() end; allIBM={}
+                    local atMax=(CountSel()>=maxSel)
+                    for _,it in ipairs(items) do
+                        if f=="" or it:lower():find(f:lower(),1,true) then
+                            local isOn=selected[it]==true
+                            local dimmed=(atMax and not isOn)
+                            local iRow=New("Frame",{Parent=ILM,
+                                BackgroundColor3=isOn and T.RED_DIM or T.BG_DROP,
+                                Size=UDim2.new(1,0,0,28), BorderSizePixel=0, ZIndex=52})
+                            Corner(iRow,4)
+                            New("TextLabel",{Parent=iRow, Text=it,
+                                Font=Enum.Font.Gotham, TextSize=11,
+                                TextColor3=dimmed and T.TXT_MUTED or T.TXT_PRI,
+                                BackgroundTransparency=1,
+                                Size=UDim2.new(1,-36,1,0), Position=UDim2.new(0,8,0,0),
+                                TextXAlignment=Enum.TextXAlignment.Left, ZIndex=53})
+                            -- Checkbox
+                            local ck=New("Frame",{Parent=iRow,
+                                BackgroundColor3=isOn and T.RED or T.BG_CARD_H,
+                                Size=UDim2.new(0,16,0,16),
+                                Position=UDim2.new(1,-26,0.5,-8),
+                                BorderSizePixel=0, ZIndex=53})
+                            Corner(ck,4)
                             if isOn then
-                                New("TextLabel", {
-                                    Parent = ck,
-                                    Text = "v",
-                                    Font = Enum.Font.GothamBold,
-                                    TextSize = 10,
-                                    TextColor3 = Color3.new(1, 1, 1),
-                                    BackgroundTransparency = 1,
-                                    Size = UDim2.new(1, 0, 1, 0),
-                                    TextXAlignment = Enum.TextXAlignment.Center,
-                                    TextYAlignment = Enum.TextYAlignment.Center,
-                                    ZIndex = 54,
-                                })
+                                New("TextLabel",{Parent=ck, Text="v",
+                                    Font=Enum.Font.GothamBold, TextSize=10,
+                                    TextColor3=Color3.new(1,1,1),
+                                    BackgroundTransparency=1,
+                                    Size=UDim2.new(1,0,1,0),
+                                    TextXAlignment=Enum.TextXAlignment.Center,
+                                    TextYAlignment=Enum.TextYAlignment.Center,
+                                    ZIndex=54})
                             end
-                            local hb = New("TextButton", {
-                                Parent = iRow,
-                                Text = "",
-                                BackgroundTransparency = 1,
-                                Size = UDim2.new(1, 0, 1, 0),
-                                ZIndex = 55,
-                            })
+                            -- Hit button
+                            local hb=New("TextButton",{Parent=iRow,Text="",
+                                BackgroundTransparency=1,
+                                Size=UDim2.new(1,0,1,0), ZIndex=55})
                             hb.MouseEnter:Connect(function()
-                                if not dimmed then
-                                    Tween(iRow, { BackgroundColor3 = isOn and T.RED_DIM:Lerp(Color3.new(1, 1, 1), 0.05) or T.BG_CARD_H }, 0.1)
-                                end
+                                if not dimmed then Tween(iRow,{BackgroundColor3=isOn and T.RED_DIM:Lerp(Color3.new(1,1,1),0.05) or T.BG_CARD_H},0.1) end
                             end)
                             hb.MouseLeave:Connect(function()
-                                Tween(iRow, { BackgroundColor3 = isOn and T.RED_DIM or T.BG_DROP }, 0.1)
+                                Tween(iRow,{BackgroundColor3=isOn and T.RED_DIM or T.BG_DROP},0.1)
                             end)
                             hb.MouseButton1Click:Connect(function()
-                                if not isOn and CountSel() >= maxSel then
+                                if not isOn and CountSel()>=maxSel then
+                                    -- At limit — show brief warning
                                     ZENUHub:Notify({
-                                        Title = "Selection Limit",
-                                        Message = "Max " .. tostring(maxSel) .. " items allowed.",
-                                        Type = "Warn",
-                                        Duration = 2,
+                                        Title   = "Selection Limit",
+                                        Message = "Max "..tostring(maxSel).." items allowed.",
+                                        Type    = "Warn", Duration = 2,
                                     })
                                     return
                                 end
-                                selected[it] = not selected[it]
-                                SLM.Text = GetSelText()
+                                selected[it]=not selected[it]
+                                SLM.Text=GetSelText()
                                 UpdateBadge()
                                 cb(selected)
                                 BuildMD(SDDM.Text)
                             end)
-                            table.insert(allIBM, iRow)
+                            table.insert(allIBM,iRow)
                         end
                     end
                 end
-            
                 UpdateBadge()
                 BuildMD("")
-                SDDM:GetPropertyChangedSignal("Text"):Connect(function()
-                    BuildMD(SDDM.Text)
-                end)
-            
-                local openM = false
+                SDDM:GetPropertyChangedSignal("Text"):Connect(function() BuildMD(SDDM.Text) end)
+
+                local openM=false
                 DB2.MouseButton1Click:Connect(function()
                     openM = not openM
                     DL2.Visible = openM
                     if openM then
-                        local height = math.min(#items * 30 + 44, 128)
-                        DL2.Size = UDim2.new(1, 0, 0, height)
+                        DL2.Size = UDim2.new(1,0,0, math.min(#items * 30 + 44, 128))
                         SDDM.Text = ""
                         BuildMD("")
                     end
                 end)
-            
-                local item = { _frame = Row, _label = lbl, Value = selected }
-                table.insert(Section._items, item)
-                return item
+                local item={_frame=Row,_label=lbl,Value=selected}
+                table.insert(Section._items,item); return item
             end
 
             -- ────────────────────────────────────────────────────
