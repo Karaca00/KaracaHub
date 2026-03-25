@@ -155,37 +155,40 @@ end
 -- ============================================================
 local function MakeDraggable(frame, handle)
     handle = handle or frame
-    local drag = false
-    local mStart, fStart = nil, nil   -- absolute positions
+    local dragging = false
+    local dragStart = nil          -- ตำแหน่งเมาส์ตอนเริ่มกด (Vector2)
+    local startPos = nil           -- ตำแหน่ง frame ตอนเริ่มกด (UDim2)
 
-    handle.InputBegan:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.MouseButton1
-        or inp.UserInputType==Enum.UserInputType.Touch then
-            drag   = true
-            mStart = Vector2.new(inp.Position.X, inp.Position.Y)
-            fStart = frame.AbsolutePosition
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
+            startPos = frame.Position
         end
     end)
-    handle.InputEnded:Connect(function(inp)
-        if inp.UserInputType==Enum.UserInputType.MouseButton1
-        or inp.UserInputType==Enum.UserInputType.Touch then
-            drag = false
+
+    handle.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
         end
     end)
-    UserInputService.InputChanged:Connect(function(inp)
-        if not drag then return end
-        if inp.UserInputType~=Enum.UserInputType.MouseMovement
-        and inp.UserInputType~=Enum.UserInputType.Touch then return end
 
-        local d    = Vector2.new(inp.Position.X, inp.Position.Y) - mStart
-        local newX = fStart.X + d.X
-        local newY = fStart.Y + d.Y
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement and
+           input.UserInputType ~= Enum.UserInputType.Touch then return end
 
-        -- Clamp inside viewport (keep at least 30 px of header visible)
-        local vp  = Workspace.CurrentCamera.ViewportSize
-        local fsz = frame.AbsoluteSize
-        newX = math.clamp(newX, 0, vp.X - fsz.X)
-        newY = math.clamp(newY, 0, vp.Y - math.min(fsz.Y, 30))
+        local delta = Vector2.new(input.Position.X, input.Position.Y) - dragStart
+        local newX = startPos.X.Offset + delta.X
+        local newY = startPos.Y.Offset + delta.Y
+
+        -- จำกัดไม่ให้หลุดขอบจอ
+        local viewport = Workspace.CurrentCamera.ViewportSize
+        local frameSize = frame.AbsoluteSize
+        newX = math.clamp(newX, 0, viewport.X - frameSize.X)
+        newY = math.clamp(newY, 0, viewport.Y - frameSize.Y)
 
         frame.Position = UDim2.new(0, newX, 0, newY)
     end)
@@ -1078,10 +1081,12 @@ function ZENUHub:CreateWindow(opts)
                 BuildDD(""); SI:GetPropertyChangedSignal("Text"):Connect(function() BuildDD(SI.Text) end)
                 local open=false
                 DB.MouseButton1Click:Connect(function()
-                    open=not open; DL.Visible=open
+                    open = not open
+                    DL.Visible = open
                     if open then
-                        DL.Size=UDim2.new(1,0,0,math.min(#items*28+44,160))
-                        SI.Text=""; BuildDD("")
+                        DL.Size = UDim2.new(1,0,0, math.min(#items * 28 + 44, 128))
+                        SI.Text = ""
+                        BuildDD("")
                     end
                 end)
                 local item={_frame=Row,_label=lbl,Value=sel}
@@ -1257,13 +1262,14 @@ function ZENUHub:CreateWindow(opts)
 
                 local openM=false
                 DB2.MouseButton1Click:Connect(function()
-                    openM=not openM; DL2.Visible=openM
+                    openM = not openM
+                    DL2.Visible = openM
                     if openM then
-                        DL2.Size=UDim2.new(1,0,0,math.min(#items*30+44,168))
-                        SDDM.Text=""; BuildMD("")
+                        DL2.Size = UDim2.new(1,0,0, math.min(#items * 30 + 44, 128))
+                        SDDM.Text = ""
+                        BuildMD("")
                     end
                 end)
-
                 local item={_frame=Row,_label=lbl,Value=selected}
                 table.insert(Section._items,item); return item
             end
