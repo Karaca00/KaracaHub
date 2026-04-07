@@ -47,7 +47,9 @@
       Slider    : :Set(n)  :SetRange(min,max)  :SetSuffix(s)  :ResetToDefault()  :SetCallback(fn)
       Textbox   : :Set(s)  :Clear()  :SetPlaceholder(s)  :ResetToDefault()  :SetCallback(fn)
       Dropdown  : :Set(s)  :Clear()  :SetItems(t)  :AddItem(s)  :RemoveItem(s)  :Refresh(t)  :ResetToDefault()  :SetCallback(fn)
-      MultiDD   : :Set(t)  :Clear()  :SetItems(t)  :AddItem(s)  :RemoveItem(s)  :Refresh(t)  :SetMaxSelect(n)  :GetSelected()  :ResetToDefault()  :SetCallback(fn)
+                  opts: Required=true  → ห้าม deselect ให้ว่าง
+      MultiDD   : :Set(t)  :Clear()  :SetItems(t)  :AddItem(s)  :RemoveItem(s)  :Refresh(t)  :SetMaxSelect(n)  :SetMinSelect(n)  :GetSelected()  :ResetToDefault()  :SetCallback(fn)
+                  opts: MinSelect=n   → กำหนดจำนวนที่เลือกขั้นต่ำ
       Label     : :SetText(s)  :SetColor(c)  :SetTextSize(n)
       Text      : :SetText(s)  :SetColor(c)  :SetTextSize(n)  :SetAlign(s)
       Keybind   : :Set(kc)  :Clear()  :SetMode(m)  :ResetToDefault()  :SetCallback(fn)
@@ -1351,11 +1353,12 @@ local function BuildSectionComponents(Section, IF)
     -- ── DROPDOWN ─────────────────────────────────────────────
     function Section:AddDropdown(o)
         o = o or {}
-        local lbl = o.Name or "Dropdown"
-        local items = o.Items or {}
-        local sel = o.Default or (items[1] or "")
-        local cb = o.Callback or function() end
-        local flag = o.Flag
+        local lbl      = o.Name or "Dropdown"
+        local items    = o.Items or {}
+        local sel      = o.Default or (items[1] or "")
+        local cb       = o.Callback or function() end
+        local flag     = o.Flag
+        local required = o.Required == true   -- Required=true: ห้าม deselect ให้ว่าง
     
         local Row = New("Frame", {
             Parent = IF,
@@ -1526,6 +1529,8 @@ local function BuildSectionComponents(Section, IF)
                         if item._enabled == false then return end
     
                         if sel == it then
+                            -- Required=true: ห้าม deselect
+                            if required then CloseDD(); return end
                             sel = ""
                             SL.Text = ""
                             SL.TextColor3 = T.TXT_MUTED
@@ -1597,6 +1602,7 @@ local function BuildSectionComponents(Section, IF)
             if flag then ZENUHub.Flags[flag] = v ~= "" and v or nil end
         end
         function item:Clear()
+            if required then return end   -- Required=true: ห้าม clear
             sel = ""
             SL.Text = ""
             SL.TextColor3 = T.TXT_MUTED
@@ -1648,12 +1654,13 @@ local function BuildSectionComponents(Section, IF)
     -- ── MULTI-DROPDOWN ───────────────────────────────────────
     function Section:AddMultiDropdown(o)
         o = o or {}
-        local lbl = o.Name or "Multi Select"
-        local items = o.Items or {}
+        local lbl      = o.Name or "Multi Select"
+        local items    = o.Items or {}
         local defaults = o.Default or {}
-        local maxSel = o.MaxSelect or math.huge
-        local cb = o.Callback or function() end
-        local flag = o.Flag
+        local maxSel   = o.MaxSelect or math.huge
+        local minSel   = o.MinSelect or 0   -- MinSelect: จำนวนขั้นต่ำที่ต้องเลือก
+        local cb       = o.Callback or function() end
+        local flag     = o.Flag
 
         local selectedMap = {}
         local selectedOrder = {}
@@ -1881,6 +1888,16 @@ local function BuildSectionComponents(Section, IF)
                         if item._enabled == false then return end
 
                         if selectedMap[it] then
+                            -- MinSelect: ห้าม deselect ถ้าจำนวนที่เลือกอยู่ = minSel
+                            if #selectedOrder <= minSel then
+                                ZENUHub:Notify({
+                                    Title = "Minimum",
+                                    Message = "ต้องเลือกอย่างน้อย " .. tostring(minSel) .. " รายการ",
+                                    Type = "Warn",
+                                    Duration = 2
+                                })
+                                return
+                            end
                             selectedMap[it] = nil
                             for i, v in ipairs(selectedOrder) do
                                 if v == it then
@@ -1988,6 +2005,7 @@ local function BuildSectionComponents(Section, IF)
 
         function item:ResetToDefault() self:Set(self._default) end
         function item:Clear()
+            if minSel > 0 then return end   -- MinSelect > 0: ห้าม clear ทั้งหมด
             selectedMap = {}
             selectedOrder = {}
             UpdateText()
@@ -2029,6 +2047,10 @@ local function BuildSectionComponents(Section, IF)
             UpdateText()
             SyncValue()
             BuildMD(SDDM.Text)
+        end
+        function item:SetMinSelect(n)
+            minSel = math.max(0, n)
+            -- ถ้าเลือกไว้น้อยกว่า minSel ใหม่ ให้แจ้ง (ไม่บังคับเพิ่มอัตโนมัติ)
         end
         function item:SetItems(t)
             items = t
