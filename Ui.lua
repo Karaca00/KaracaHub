@@ -44,7 +44,8 @@
       Checkbox  : :Set(bool)  :Toggle()  :ResetToDefault()  :SetCallback(fn)
       ColorPick : :Set(Color3)  :SetAlpha(n)  :ResetToDefault()  :SetCallback(fn)   cb(Color3,alpha)
       Button    : :Fire()  :SetCallback(fn)
-      Slider    : :Set(n)  :SetRange(min,max)  :SetSuffix(s)  :ResetToDefault()  :SetCallback(fn)
+      Slider    : :Set(n)  :SetRange(min,max)  :SetStep(n)  :SetSuffix(s)  :ResetToDefault()  :SetCallback(fn)
+                  opts: Step=n → ขนาดการกระโดด เช่น Step=5 หรือ Step=0.1
       Textbox   : :Set(s)  :Clear()  :SetPlaceholder(s)  :ResetToDefault()  :SetCallback(fn)
       Dropdown  : :Set(s)  :Clear()  :SetItems(t)  :AddItem(s)  :RemoveItem(s)  :Refresh(t)  :ResetToDefault()  :SetCallback(fn)
                   opts: Required=true  → ห้าม deselect ให้ว่าง
@@ -1172,11 +1173,21 @@ local function BuildSectionComponents(Section, IF)
     -- ── SLIDER  (Touch-safe) ─────────────────────────────────
     function Section:AddSlider(o)
         o = o or {}
-        local lbl = o.Name or "Slider"
-        local mn = o.Min or 0; local mx = o.Max or 100
-        local def = math.clamp(o.Default or mn, mn, mx)
-        local suf = o.Suffix or ""; local cb = o.Callback or function() end
+        local lbl  = o.Name or "Slider"
+        local mn   = o.Min or 0; local mx = o.Max or 100
+        local step = math.abs(o.Step or 1)   -- Step: ขนาดการกระโดดของ slider (default=1)
+        if step == 0 then step = 1 end
+        local def  = math.clamp(o.Default or mn, mn, mx)
+        local suf  = o.Suffix or ""; local cb = o.Callback or function() end
         local flag = o.Flag
+
+        -- คำนวณจำนวนทศนิยมจาก step เพื่อ format ค่าให้ถูกต้อง
+        local function _decimals(s)
+            local str = tostring(s)
+            local dot = str:find("%.")
+            return dot and (#str - dot) or 0
+        end
+        local stepDecimals = _decimals(step)
     
         local Row = New("Frame", {Parent = IF, BackgroundColor3 = T.BG_CARD, 
             Size = UDim2.new(1, 0, 0, 56), BorderSizePixel = 0})
@@ -1219,22 +1230,28 @@ local function BuildSectionComponents(Section, IF)
         local item = {_frame = Row, _label = lbl, Value = val, _type = "Slider"}
     
         local function ApplyVal(v, fire)
-            if v == nil then return end 
-            val = math.clamp(math.round(v), mn, mx)
+            if v == nil then return end
+            -- snap to step
+            local snapped = math.round(v / step) * step
+            -- clamp และป้องกัน floating point drift
+            local factor = 10 ^ stepDecimals
+            snapped = math.clamp(math.round(snapped * factor) / factor, mn, mx)
+            val = snapped
             item.Value = val
-            
+
             local fp = math.clamp((val - mn) / (mx - mn), 0, 1)
             Tween(Fill, {Size = UDim2.new(fp, 0, 1, 0)}, 0.1)
             Tween(Thumb, {Position = UDim2.new(fp, -7, 0.5, -7)}, 0.1)
-            
-            ValInput.Text = tostring(val) .. suf
+
+            -- format ทศนิยมให้ตรงกับ step
+            local fmt = stepDecimals > 0 and ("%." .. stepDecimals .. "f") or "%d"
+            ValInput.Text = string.format(fmt, val) .. suf
             if fire ~= false then cb(val) end
             if flag then ZENUHub.Flags[flag] = val end
         end
     
         ValInput.FocusLost:Connect(function()
-            -- FIX 4: Preserve leading minus sign so negative ranges work correctly
-            local raw = ValInput.Text:gsub(suf, ""):match("^%-?%d+") or ""
+            local raw = ValInput.Text:gsub(suf, ""):match("^%-?%d+%.?%d*") or ""
             local n = tonumber(raw)
             if n then
                 ApplyVal(n, true)
@@ -1286,7 +1303,13 @@ local function BuildSectionComponents(Section, IF)
         function item:ResetToDefault() ApplyVal(self._default, false) end
         function item:SetCallback(f)   cb = f end
         function item:SetName(s)       lbl = s; NameLbl.Text = s; item._label = s end
-        function item:SetSuffix(s)     suf = s; ValInput.Text = tostring(val) .. s end
+        function item:SetSuffix(s)     suf = s; ApplyVal(val, false) end
+        function item:SetStep(s)
+            step = math.abs(s or 1)
+            if step == 0 then step = 1 end
+            stepDecimals = _decimals(step)
+            ApplyVal(val, false)
+        end
         function item:SetRange(newMin, newMax)
             mn = newMin; mx = newMax
             ApplyVal(val, false)
