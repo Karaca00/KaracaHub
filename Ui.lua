@@ -3628,7 +3628,7 @@ function ZENUHub:CreateWindow(opts)
                 -- ถ้า auto save เปิดอยู่ ให้อัปเดต dropdown ด้วย
                 if autoSaveState and loadDDItem then
                     local fresh = ZENUHub:ListConfigs()
-                    table.insert(fresh, 1, "")
+                    table.insert(fresh, 1, "Auto")
                     pcall(function() loadDDItem:SetItems(fresh) end)
                 end
             end
@@ -3637,14 +3637,29 @@ function ZENUHub:CreateWindow(opts)
         -- ── LOAD: Dropdown เลือกไฟล์ ─────────────────────────
         section:AddSeparator({Label="LOAD"})
         local cfgFiles = ZENUHub:ListConfigs()
-        table.insert(cfgFiles, 1, "")   -- ตัวเลือกแรก = ว่าง (ใช้ Player ID)
+        table.insert(cfgFiles, 1, "Auto")   -- ตัวเลือกแรก = Auto (โหลดจาก UID)
 
         loadDDItem = section:AddDropdown({
             Name="Load Config File",
             Items=cfgFiles,
-            Default="",
-            Tooltip="เลือกไฟล์ใน Zenu_Config/  (ว่าง = โหลดจาก Player ID)  ชื่อแสดงรวมนามสกุล .json",
+            Default="Auto",
+            Tooltip="Auto = โหลดจาก <PlayerUID>.json  |  เลือกไฟล์ = โหลดไฟล์นั้น  |  ว่าง = ต้องเลือกไฟล์ก่อน",
         })
+
+        -- helper: แปลง dropdown value เป็น filename จริงสำหรับ LoadConfig
+        local function resolveLoad(silent)
+            local v = loadDDItem and loadDDItem.Value or ""
+            if v == "" then
+                if not silent then
+                    ZENUHub:Notify({Title="Load Config", Message="กรุณาเลือกไฟล์ก่อน", Type="Warn", Duration=2})
+                end
+                return nil
+            end
+            if v == "Auto" then
+                return _cfgDefaultName()   -- UID ของผู้เล่น
+            end
+            return v
+        end
 
         -- ปุ่ม Refresh รายชื่อไฟล์ใน Dropdown
         section:AddButton({
@@ -3652,7 +3667,7 @@ function ZENUHub:CreateWindow(opts)
             Tooltip="สแกนไฟล์ใหม่ใน Zenu_Config/",
             Callback=function()
                 local fresh = ZENUHub:ListConfigs()
-                table.insert(fresh, 1, "")
+                table.insert(fresh, 1, "Auto")
                 loadDDItem:SetItems(fresh)
                 ZENUHub:Notify({Title="File List", Message=#fresh-1 .." ไฟล์พบ", Type="Info", Duration=2})
             end
@@ -3660,10 +3675,10 @@ function ZENUHub:CreateWindow(opts)
 
         section:AddButton({
             Name="[L] Load Config",
-            Tooltip="โหลดคอนฟิกจากไฟล์ที่เลือกใน Dropdown",
+            Tooltip="โหลดคอนฟิกจากไฟล์ที่เลือกใน Dropdown  (Auto = UID.json)",
             Callback=function()
-                local n = loadDDItem and loadDDItem.Value or ""
-                ZENUHub:LoadConfig(n)
+                local n = resolveLoad(false)
+                if n then ZENUHub:LoadConfig(n) end
             end
         })
 
@@ -3672,7 +3687,7 @@ function ZENUHub:CreateWindow(opts)
             Tooltip="ลบไฟล์ที่เลือกอยู่ใน Dropdown (ไม่สามารถกู้คืนได้)",
             Callback=function()
                 local n = loadDDItem and loadDDItem.Value or ""
-                if n == "" then
+                if n == "" or n == "Auto" then
                     ZENUHub:Notify({Title="Delete", Message="กรุณาเลือกไฟล์ก่อน", Type="Warn", Duration=2})
                     return
                 end
@@ -3680,7 +3695,7 @@ function ZENUHub:CreateWindow(opts)
                 if ok then
                     -- Refresh dropdown after deletion
                     local fresh = ZENUHub:ListConfigs()
-                    table.insert(fresh, 1, "")
+                    table.insert(fresh, 1, "Auto")
                     loadDDItem:SetItems(fresh)
                 end
             end
@@ -3708,15 +3723,15 @@ function ZENUHub:CreateWindow(opts)
         section:AddToggle({
             Name="Auto Load",
             Default=autoLoadState,
-            Tooltip="เปิด: โหลดคอนฟิกอัตโนมัติตอนเริ่มต้น  (state เก็บใน Auto_Config)",
+            Tooltip="เปิด: โหลดคอนฟิกอัตโนมัติตอนเริ่มต้น  Auto = UID.json  (state เก็บใน Auto_Config)",
             Callback=function(v)
                 autoLoadState = v
                 local d = ZENUHub:LoadAutoConfig()
                 d.auto_load = v
                 ZENUHub:SaveAutoConfig(d)
                 if v then
-                    local n = loadDDItem and loadDDItem.Value or ""
-                    ZENUHub:LoadConfig(n)
+                    local n = resolveLoad(false)
+                    if n then ZENUHub:LoadConfig(n) end
                 end
             end
         })
@@ -3724,8 +3739,8 @@ function ZENUHub:CreateWindow(opts)
         -- โหลดทันทีถ้า auto load เปิดอยู่
         if autoLoadState then
             task.defer(function()
-                local n = loadDDItem and loadDDItem.Value or ""
-                ZENUHub:LoadConfig(n)
+                local n = resolveLoad(true)   -- silent: ไม่ต้องแจ้งเตือนตอนเริ่ม
+                if n then ZENUHub:LoadConfig(n) end
             end)
         end
     end
