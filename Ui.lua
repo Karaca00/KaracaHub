@@ -10,7 +10,7 @@
     (c) discord.gg/zenuhub
 
     [NEW IN v3.0]
-      + ColorPicker  : Alpha (RGBA) slider - callback receives (Color3, alpha 0-1)
+      + ColorPicker  : callback receives (Color3)
       + Watermark    : ZENUHub:CreateWatermark(opts) - FPS/Ping/Time floating bar
       + Theme Manager: ZENUHub:ApplyTheme(nameOrTable)  presets: Blue Green Purple Gold
                        ZENUHub:RegisterTheme(name,t)  ZENUHub:GetTheme()
@@ -42,7 +42,7 @@
       Named     : :SetName(s)
       Toggle    : :Set(bool)  :Toggle()  :ResetToDefault()  :SetCallback(fn)
       Checkbox  : :Set(bool)  :Toggle()  :ResetToDefault()  :SetCallback(fn)
-      ColorPick : :Set(Color3)  :SetAlpha(n)  :ResetToDefault()  :SetCallback(fn)   cb(Color3,alpha)
+      ColorPick : :Set(Color3)  :ResetToDefault()  :SetCallback(fn)   cb(Color3)
       Button    : :Fire()  :SetCallback(fn)
       Slider    : :Set(n)  :SetRange(min,max)  :SetStep(n)  :SetSuffix(s)  :ResetToDefault()  :SetCallback(fn)
                   opts: Step=n → ขนาดการกระโดด เช่น Step=5 หรือ Step=0.1
@@ -2128,14 +2128,13 @@ local function BuildSectionComponents(Section, IF)
         return item
     end
 
-    -- ── COLOR PICKER  (with Alpha / RGBA slider) ────────────
+    -- ── COLOR PICKER ───────────────────────────────────────
     function Section:AddColorPicker(o)
         o = o or {}
         local lbl   = o.Name    or "Color Picker"
         local def   = o.Default or Color3.fromRGB(255, 255, 255)
         local cb    = o.Callback or function() end
         local flag  = o.Flag
-        local alpha = math.clamp(o.Alpha or 1, 0, 1)   -- initial alpha 0-1
 
         local H, S, V = Color3.toHSV(def)
 
@@ -2160,17 +2159,10 @@ local function BuildSectionComponents(Section, IF)
         })
         Corner(ColorBtn,5); Stroke(ColorBtn,1,T.BORDER)
 
-        -- Checkerboard hint on ColorBtn (shows alpha visually)
-        local _cbCheck = New("UIGradient",{Parent=ColorBtn,
-            Transparency=NumberSequence.new{
-                NumberSequenceKeypoint.new(0, 1-alpha),
-                NumberSequenceKeypoint.new(1, 1-alpha)
-            }})
-
-        -- Panel: 172 (original) + 36 (alpha row) = 208 px tall
+        -- Panel: 172 px tall
         local PickerPanel = New("Frame", {
             Parent=Row, BackgroundColor3=T.BG_DROP,
-            Size=UDim2.new(1,-20,0,208), Position=UDim2.new(0,10,0,38),
+            Size=UDim2.new(1,-20,0,172), Position=UDim2.new(0,10,0,38),
             BorderSizePixel=0, Visible=false, ZIndex=10
         })
         Corner(PickerPanel,6); Stroke(PickerPanel,1,T.BORDER)
@@ -2278,62 +2270,11 @@ local function BuildSectionComponents(Section, IF)
             RBoxes[i] = tb
         end
 
-        -- ── Separator above Alpha ──────────────────────────────
-        New("Frame",{Parent=PickerPanel, BackgroundColor3=T.BORDER,
-            Size=UDim2.new(1,-16,0,1), Position=UDim2.new(0,8,0,148),
-            BorderSizePixel=0, ZIndex=11})
-
-        -- ── Alpha Slider ───────────────────────────────────────
-        New("TextLabel",{Parent=PickerPanel, Text="A",
-            Font=Enum.Font.GothamBold, TextSize=9, TextColor3=T.TXT_MUTED,
-            BackgroundTransparency=1, Size=UDim2.new(0,12,0,16),
-            Position=UDim2.new(0,8,0,157), TextXAlignment=Enum.TextXAlignment.Center,
-            ZIndex=12})
-
-        local AlphaTrackBG = New("Frame",{Parent=PickerPanel,
-            BackgroundColor3=Color3.fromRGB(30,30,40),
-            Size=UDim2.new(1,-52,0,10), Position=UDim2.new(0,24,0,158),
-            BorderSizePixel=0, ZIndex=11})
-        Corner(AlphaTrackBG,3)
-        -- Checkerboard gradient
-        New("UIGradient",{Parent=AlphaTrackBG,
-            Color=ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(80,80,80)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))
-            }})
-
-        local AlphaFill = New("Frame",{Parent=AlphaTrackBG,
-            BackgroundColor3=def, Size=UDim2.new(alpha,0,1,0),
-            BorderSizePixel=0, ZIndex=12})
-        Corner(AlphaFill,3)
-        New("UIGradient",{Parent=AlphaFill,
-            Transparency=NumberSequence.new{
-                NumberSequenceKeypoint.new(0,1), NumberSequenceKeypoint.new(1,0)}})
-
-        local AlphaThumb = New("Frame",{Parent=AlphaTrackBG,
-            BackgroundColor3=T.TXT_PRI,
-            Size=UDim2.new(0,12,0,12), Position=UDim2.new(alpha,-6,0.5,-6),
-            BorderSizePixel=0, ZIndex=13})
-        Corner(AlphaThumb,6); Stroke(AlphaThumb,1,T.BORDER)
-
-        local AlphaValLbl = New("TextLabel",{Parent=PickerPanel,
-            Text=tostring(math.round(alpha*100)).."%",
-            Font=Enum.Font.GothamBold, TextSize=9, TextColor3=T.RED,
-            BackgroundTransparency=1, Size=UDim2.new(0,26,0,16),
-            Position=UDim2.new(1,-28,0,157),
-            TextXAlignment=Enum.TextXAlignment.Center, ZIndex=12})
-
-        -- Alpha drag area
-        local AlphaTA = New("TextButton",{Parent=PickerPanel, Text="",
-            BackgroundTransparency=1,
-            Size=UDim2.new(1,-52,0,22), Position=UDim2.new(0,24,0,152),
-            BorderSizePixel=0, ZIndex=14})
-
         -- ── State & helpers ───────────────────────────────────
         local _updatingInputs = false
-        local item = { _frame=Row, _label=lbl, Value=def, Alpha=alpha, _type="ColorPicker", _enabled=true }
+        local item = { _frame=Row, _label=lbl, Value=def, _type="ColorPicker", _enabled=true }
         local open = false
-        local draggingSV=false; local draggingHue=false; local draggingAlpha=false
+        local draggingSV=false; local draggingHue=false
 
         local function SyncInputsFromHSV()
             if _updatingInputs then return end
@@ -2346,16 +2287,6 @@ local function BuildSectionComponents(Section, IF)
             _updatingInputs = false
         end
 
-        local function SyncAlphaUI()
-            local a = math.clamp(alpha,0,1)
-            Tween(AlphaFill,  {Size=UDim2.new(a,0,1,0)}, 0.06)
-            Tween(AlphaThumb, {Position=UDim2.new(a,-6,0.5,-6)}, 0.06)
-            AlphaValLbl.Text = tostring(math.round(a*100)).."%"
-            -- Update checkerboard transparency hint on ColorBtn
-            _cbCheck.Transparency = NumberSequence.new{
-                NumberSequenceKeypoint.new(0,1-a), NumberSequenceKeypoint.new(1,1-a)}
-        end
-
         local function UpdateDots()
             SVDot.Position = UDim2.new(S,-4,1-V,-4)
             HueDot.Position = UDim2.new(0,-2,H,-2)
@@ -2365,21 +2296,13 @@ local function BuildSectionComponents(Section, IF)
             local newColor = Color3.fromHSV(H,S,V)
             SVMap.BackgroundColor3 = Color3.fromHSV(H,1,1)
             ColorBtn.BackgroundColor3 = newColor
-            AlphaFill.BackgroundColor3 = newColor
             SyncInputsFromHSV()
             item.Value = newColor
-            if fire ~= false then cb(newColor, alpha) end
+            if fire ~= false then cb(newColor) end
             if flag then ZENUHub.Flags[flag] = newColor end
         end
 
         local function ApplyHSV(fire) UpdateDots(); UpdateColor(fire) end
-
-        local function ApplyAlpha(fire)
-            alpha = math.clamp(alpha,0,1)
-            item.Alpha = alpha
-            SyncAlphaUI()
-            if fire ~= false then cb(item.Value, alpha) end
-        end
 
         -- Wire input boxes
         HexBox.Focused:Connect(function() Tween(HexStroke,{Color=T.RED},0.14) end)
@@ -2406,8 +2329,8 @@ local function BuildSectionComponents(Section, IF)
             if item._enabled == false then return end
             open = not open
             PickerPanel.Visible = open
-            -- Open height = 34 (header) + 208 (panel) + 14 (gap) = 256
-            Tween(Row, {Size=UDim2.new(1,0,0, open and 256 or 34)}, 0.2)
+            -- Open height = 34 (header) + 172 (panel) + 14 (gap) = 220
+            Tween(Row, {Size=UDim2.new(1,0,0, open and 220 or 34)}, 0.2)
         end
         ColorBtn.MouseButton1Click:Connect(ToggleCP)
         Hover(Row, T.BG_CARD, T.BG_CARD_H)
@@ -2423,12 +2346,6 @@ local function BuildSectionComponents(Section, IF)
             H = math.clamp((inp.Position.Y-pos.Y)/sz.Y,0,1)
             ApplyHSV(true)
         end
-        local function UpdateAlphaDrag(inp)
-            local pos=AlphaTrackBG.AbsolutePosition; local sz=AlphaTrackBG.AbsoluteSize
-            alpha = math.clamp((inp.Position.X-pos.X)/sz.X,0,1)
-            ApplyAlpha(true)
-        end
-
         SVMap.InputBegan:Connect(function(inp)
             if inp.UserInputType==Enum.UserInputType.MouseButton1
             or inp.UserInputType==Enum.UserInputType.Touch then
@@ -2439,24 +2356,17 @@ local function BuildSectionComponents(Section, IF)
             or inp.UserInputType==Enum.UserInputType.Touch then
                 draggingHue=true; UpdateHue(inp) end
         end)
-        AlphaTA.InputBegan:Connect(function(inp)
-            if inp.UserInputType==Enum.UserInputType.MouseButton1
-            or inp.UserInputType==Enum.UserInputType.Touch then
-                draggingAlpha=true; UpdateAlphaDrag(inp) end
-        end)
-
         local cpChangedConn = UserInputService.InputChanged:Connect(function(inp)
             if inp.UserInputType==Enum.UserInputType.MouseMovement
             or inp.UserInputType==Enum.UserInputType.Touch then
                 if draggingSV    then UpdateSV(inp)         end
                 if draggingHue   then UpdateHue(inp)        end
-                if draggingAlpha then UpdateAlphaDrag(inp)  end
             end
         end)
         local cpEndedConn = UserInputService.InputEnded:Connect(function(inp)
             if inp.UserInputType==Enum.UserInputType.MouseButton1
             or inp.UserInputType==Enum.UserInputType.Touch then
-                draggingSV=false; draggingHue=false; draggingAlpha=false
+                draggingSV=false; draggingHue=false
             end
         end)
         Row.Destroying:Connect(function()
@@ -2465,23 +2375,18 @@ local function BuildSectionComponents(Section, IF)
         end)
 
         item._default      = def
-        item._defaultAlpha = math.clamp(o.Alpha or 1, 0, 1)
         function item:Set(col)
             H,S,V = Color3.toHSV(col); ApplyHSV(false)
         end
-        function item:SetAlpha(a)
-            alpha = math.clamp(a,0,1); ApplyAlpha(false)
-        end
         function item:ResetToDefault()
             self:Set(self._default)
-            self:SetAlpha(self._defaultAlpha)
         end
         function item:SetName(s)
             lbl=s; NameLbl.Text=s; item._label=s
         end
         function item:SetCallback(f) cb=f end
 
-        UpdateDots(); UpdateColor(false); SyncAlphaUI()
+        UpdateDots(); UpdateColor(false)
 
         _attachCommon(item, Row, o)
         table.insert(Section._items, item)
