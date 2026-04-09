@@ -6,7 +6,7 @@
     ███████╗███████╗██║ ╚████║╚██████╔╝    ██║  ██║╚██████╔╝██████╔╝
     ╚══════╝╚══════╝╚═╝  ╚═══╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝
 
-    ZENU Hub UI Library  v3.0 (Ultimate Edition)
+    ZENU Hub UI Library  v3.2 (Ultimate Edition)
     (c) discord.gg/zenuhub
 
     [NEW IN v3.0]
@@ -24,6 +24,14 @@
       + Keybind Modes: [•••] config button beside keybind
                        Toggle (fire once) | Hold (cb true/false) | Always (cb each heartbeat)
       + Tooltip Delay: 0.35s delay before tooltip appears
+
+    [NEW IN v3.2]
+      + Start=true   : ทุก component รองรับ Start=true เพื่อให้รัน Callback ทันทีตอนสร้าง
+                       LoadConfig / AutoLoad จะเรียก callback ด้วยถ้า Start=true
+                       ใช้งาน: section:AddToggle({..., Start=true, Callback=function(v) end})
+                       Button: Start=true จะ fire ทันที (ไม่ส่งค่า เหมือนกดปุ่ม)
+                       Keybind: Start=true จะส่ง KeyCode ปัจจุบัน (ไม่ fire key logic)
+                       component ใดมี item:FireCallback() สำหรับเรียกจากภายนอกด้วย
 
     [NEW IN v3.1]
       + ResetToDefault : :ResetToDefault() restores Default= value on every component
@@ -53,7 +61,8 @@
                   opts: MinSelect=n   → กำหนดจำนวนที่เลือกขั้นต่ำ
       Label     : :SetText(s)  :SetColor(c)  :SetTextSize(n)
       Text      : :SetText(s)  :SetColor(c)  :SetTextSize(n)  :SetAlign(s)
-      Keybind   : :Set(kc)  :Clear()  :SetMode(m)  :ResetToDefault()  :SetCallback(fn)
+      Keybind   : :Set(kc)  :Clear()  :SetMode(m)  :ResetToDefault()  :SetCallback(fn)  :FireCallback()
+      All above : Start=true → รัน callback ทันทีตอนสร้าง และตอน LoadConfig/AutoLoad
 --]]
 
 -- ============================================================
@@ -769,6 +778,10 @@ function ZENUHub:LoadConfig(filename)
                 elseif t=="mdd"  and type(entry.v)=="table" then item:Set(entry.v)
                 end
                 self.Flags[flag] = item.Value
+                -- [v3.2] Fire callback after load if component has Start=true
+                if item._fireOnStart and type(item.FireCallback) == "function" then
+                    item:FireCallback()
+                end
             end)
             loaded = loaded + 1
         end
@@ -1052,12 +1065,12 @@ local function BuildSectionComponents(Section, IF)
         function item:ResetToDefault() SetS(self._default, false) end
         function item:SetCallback(f)   cb=f end
         function item:SetName(s)       lbl=s; NameLbl.Text=s; item._label=s end
+        function item:FireCallback()   cb(item.Value) end
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
-        table.insert(Section._items,item); return item
-    end
-
-    -- ── CHECKBOX ─────────────────────────────────────────────
+        if o.Start then task.defer(function() cb(state) end) end
+        table.insert(Section._items,item); return item ─────────────────────────────────────────────
     function Section:AddCheckbox(o)
         o=o or {}
         local lbl=o.Name or "Checkbox"; local def=o.Default or false
@@ -1107,8 +1120,11 @@ local function BuildSectionComponents(Section, IF)
         function item:ResetToDefault() SetS(self._default, false) end
         function item:SetCallback(f)   cb=f end
         function item:SetName(s)       lbl=s; NameLbl.Text=s; item._label=s end
+        function item:FireCallback()   cb(item.Value) end
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(state) end) end
         table.insert(Section._items,item); return item
     end
 
@@ -1164,8 +1180,11 @@ local function BuildSectionComponents(Section, IF)
             Btn.Text = s
             item._label = s
         end
-    
+        function item:FireCallback() cb() end
+
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Btn, o)
+        if o.Start then task.defer(function() cb() end) end
         table.insert(Section._items, item)
         return item
     end
@@ -1304,6 +1323,7 @@ local function BuildSectionComponents(Section, IF)
         function item:SetCallback(f)   cb = f end
         function item:SetName(s)       lbl = s; NameLbl.Text = s; item._label = s end
         function item:SetSuffix(s)     suf = s; ApplyVal(val, false) end
+        function item:FireCallback()   cb(item.Value) end
         function item:SetStep(s)
             step = math.abs(s or 1)
             if step == 0 then step = 1 end
@@ -1320,7 +1340,9 @@ local function BuildSectionComponents(Section, IF)
             if inputEndedConnection then inputEndedConnection:Disconnect() end
         end)
     
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(val) end) end
         table.insert(Section._items, item)
         return item
     end
@@ -1368,8 +1390,11 @@ local function BuildSectionComponents(Section, IF)
         function item:SetName(s)         lbl=s; NameLbl.Text=s; item._label=s end
         function item:SetPlaceholder(s)  Inp.PlaceholderText=s end
         function item:SetCallback(f)     cb=f end
+        function item:FireCallback()     cb(item.Value) end
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(Inp.Text) end) end
         table.insert(Section._items,item); return item
     end
 
@@ -1641,6 +1666,7 @@ local function BuildSectionComponents(Section, IF)
             item._label = s
         end
         function item:SetCallback(f) cb = f end
+        function item:FireCallback()   cb(item.Value) end
         function item:SetItems(t)
             items = t
             sel = ""
@@ -1669,7 +1695,9 @@ local function BuildSectionComponents(Section, IF)
             if _ddOutsideConn then _ddOutsideConn:Disconnect(); _ddOutsideConn = nil end
         end)
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(sel) end) end
         table.insert(Section._items, item)
         return item
     end
@@ -2045,7 +2073,7 @@ local function BuildSectionComponents(Section, IF)
             item._label = s
         end
         function item:SetCallback(f) cb = f end
-        function item:SetMaxSelect(n)
+        function item:FireCallback()   cb(item.Value) end
             maxSel = n
             if n ~= math.huge and not MB then
                 MB = New("TextLabel", {
@@ -2123,7 +2151,9 @@ local function BuildSectionComponents(Section, IF)
             if _mddOutsideConn then _mddOutsideConn:Disconnect(); _mddOutsideConn = nil end
         end)
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(item.Value) end) end
         table.insert(Section._items, item)
         return item
     end
@@ -2385,10 +2415,13 @@ local function BuildSectionComponents(Section, IF)
             lbl=s; NameLbl.Text=s; item._label=s
         end
         function item:SetCallback(f) cb=f end
+        function item:FireCallback()   cb(item.Value) end
 
         UpdateDots(); UpdateColor(false)
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(item.Value) end) end
         table.insert(Section._items, item)
         return item
     end
@@ -2702,6 +2735,7 @@ local function BuildSectionComponents(Section, IF)
             self:SetMode(self._defaultMode)
         end
         function item:SetCallback(f) cb=f end
+        function item:FireCallback()   cb(item.Value) end
 
         Row.Destroying:Connect(function()
             if kbInputConn  then kbInputConn:Disconnect()  end
@@ -2713,7 +2747,9 @@ local function BuildSectionComponents(Section, IF)
             end
         end)
 
+        item._fireOnStart = o.Start == true
         _attachCommon(item, Row, o)
+        if o.Start then task.defer(function() cb(key) end) end
         table.insert(Section._items, item)
         return item
     end
