@@ -3766,7 +3766,7 @@ function ZENUHub:CreateWindow(opts)
                 d.auto_load = v
                 ZENUHub:SaveAutoConfig(d)
                 if v then
-                    local n = resolveLoad(false)
+                    local n = resolveLoad(true)
                     if n then ZENUHub:LoadConfig(n) end
                 end
             end
@@ -3775,7 +3775,7 @@ function ZENUHub:CreateWindow(opts)
         -- โหลดทันทีถ้า auto load เปิดอยู่
         if autoLoadState then
             task.defer(function()
-                local n = resolveLoad(true)   -- silent: ไม่ต้องแจ้งเตือนตอนเริ่ม
+                local n = resolveLoad(true)
                 if n then ZENUHub:LoadConfig(n) end
             end)
         end
